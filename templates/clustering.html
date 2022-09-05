@@ -1,0 +1,88 @@
+{%include 'header.html'%}
+
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0">Clustering</h1>
+                </div>
+
+            </div>
+            <!-- /.row -->
+        </div>
+        <!-- /.container-fluid -->
+    </div>
+
+    <section class="content">
+        <div class="container-fluid">
+            <form action='/clustering' method='POST' enctype='multipart/form-data'>
+                <div class='form-group'>
+                    <label>Select file</label>
+                    <div class='custom-file'>
+                        <input type='file' class='custom-file-input' name='file' id='file'>
+                        <label class='custom-file-label' for='file'>Select file..</label>
+
+                    </div>
+                </div>
+                <button type='submit' class='btn btn-primary'>Upload file</button>
+            </form>
+        </div>
+
+        <!-- /.card -->
+    </section>
+    <!-- /.content-header -->
+    <!-- Main content 
+
+        <section class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <!-- left column 
+                    <div class="col-md-6">
+                        <!-- general form elements
+                        <div class="card card-primary">
+                            <div class="card-header">
+                                <h3 class="card-title">Form Clustering Data</h3>
+                            </div>
+                            <!-- /.card-header -->
+    <!-- form start 
+                            <form action="/clustering" method="POST" enctype = "multipart/form-data">
+                                <div class="card-body">
+                                   <!-- <div class="form-group">
+                                        <label for="inputCluster">K berapa</label>
+                                        <input type="number" class="form-control" id="inputCluster" name="cluster" placeholder="Enter cluster">
+                                    <div>
+                                             <a href="/template/clustering.xls" style="color:white">Download Template</a>
+                                        </div>
+                                  
+                                    </div>
+                                    <div class="form-group">
+                                        <label>File input</label>
+                                        
+                                            <div class="custom-file">
+                                                <input type="file" class="custom-file-input" name="file" >
+                                                <label class="custom-file-label">Choose file</label>
+                                            </div>     
+                                    </div>
+                                </div>
+                                <!-- /.card-body 
+                                <div class="card-footer">
+                                    <button type="submit" class="btn btn-primary">Submit</button>
+                                </div>
+                            </form>
+                            <form action="/clustering" method = "POST" 
+         enctype = "multipart/form-data">
+         <input type = "file" name = "file" />
+         <input type = "submit"/>
+      </form>
+                        </div>
+                        <!-- /.card 
+
+        </section>
+        <!-- /.content -->
+</div>
+
+<!-- /.content-wrapper -->
+{% include 'footer.html'%}

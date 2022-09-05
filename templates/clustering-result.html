@@ -1,0 +1,76 @@
+{%include 'header.html'%}
+
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0">Clustering Result</h1>
+                </div>
+
+            </div>
+            <!-- /.row -->
+        </div>
+        <!-- /.container-fluid -->
+    </div>
+    <!-- /.content-header -->
+    <!-- Main content -->
+    <section class="content">
+
+        <div class="card-header">
+            <h3 class="card-title">Table</h3>
+        </div>
+        <!-- /.card-header -->
+
+
+        <div class="card-body p-0">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+
+                        <th style="width: 10px">No.</th>
+                        <th>NIK</th>
+                        <th>KPI</th>
+                        <th>Performance</th>
+                        <th>Competency</th>
+                        <th>Learning Point</th>
+                        <th>Kerja Ibadah</th>
+                        <th>Apresiasi</th>
+                        <th>Lebih Cepat</th>
+                        <th>Aktif Bersama</th>
+                        <th>Cluster</th>
+
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in userDetails %}
+                    <tr>
+
+                        <td>{{loop.index}}</td>
+                        <td>{{ user[1]}}</td>
+                        <td>{{ user[2]}}</td>
+                        <td>{{ user[3]}}</td>
+                        <td>{{ user[4]}}</td>
+                        <td>{{ user[5]}}</td>
+                        <td>{{ user[6]}}</td>
+                        <td>{{ user[7]}}</td>
+                        <td>{{ user[8]}}</td>
+                        <td>{{ user[9]}}</td>
+                        <td>{{ user[10]}}</td>
+                    </tr>
+
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <!-- /.card-body -->
+</div>
+<!-- /.card -->
+</div>
+</section>
+<!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+{% include 'footer.html'%}
