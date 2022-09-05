@@ -12,6 +12,7 @@ import pickle
 import pandas as pd
 from apyori import apriori
 import json
+from aprioriScratch import *
 
 UPLOAD_FOLDER = '/file'
 ALLOWED_EXTENSIONS = {'csv', 'xls','xlsx'}
@@ -191,31 +192,28 @@ def asosiasiData():
 
     '''
     Make association rules for each cluster
+    
     '''
+     #for i in range(0, len(data3)):
+    #    records3.append([str(data3.values[i,j]) for j in range(0, 8)])
+    #associationRules_3 = apriori(records3, min_support=0.55, min_confidence=0.9, min_length = 2)
+    #associationResults_3 = list(associationRules_3)
 
-    records1 = []
-    for i in range(0, len(data1)):
-        records1.append([str(data1.values[i,j]) for j in range(0, 8)])
-    associationRules_1 = apriori(records1, min_support=0.55, min_confidence=0.9, min_length = 2)
-    associationResults_1 = list(associationRules_1)
+    records1 = np.array(data1)
+    freq_items1, item_support_dict1 = aprioriFunc(records1, min_support = 0.55)
+    association_rules1 = create_rules(freq_items1, item_support_dict1, min_confidence = 0.9)
 
-    records2 = []
-    for i in range(0, len(data2)):
-        records2.append([str(data2.values[i,j]) for j in range(0, 8)])
-    associationRules_2 = apriori(records2, min_support=0.55, min_confidence=0.9, min_length = 2)
-    associationResults_2 = list(associationRules_2)
+    records2 = np.array(data2)
+    freq_items2, item_support_dict2 = aprioriFunc(records2, min_support = 0.55)
+    association_rules2 = create_rules(freq_items2, item_support_dict2, min_confidence = 0.9)
 
-    records3 = []
-    for i in range(0, len(data3)):
-        records3.append([str(data3.values[i,j]) for j in range(0, 8)])
-    associationRules_3 = apriori(records3, min_support=0.55, min_confidence=0.9, min_length = 2)
-    associationResults_3 = list(associationRules_3)
-
-    records4 = []
-    for i in range(0, len(data4)):
-        records4.append([str(data4.values[i,j]) for j in range(0, 8)])
-    associationRules_4 = apriori(records4, min_support=0.55, min_confidence=0.9, min_length = 2)
-    associationResults_4 = list(associationRules_4)
+    records3 = np.array(data3)
+    freq_items3, item_support_dict3 = aprioriFunc(records3, min_support = 0.55)
+    association_rules3 = create_rules(freq_items3, item_support_dict3, min_confidence = 0.9)
+    
+    records4 = np.array(data4)
+    freq_items4, item_support_dict4 = aprioriFunc(records4, min_support = 0.55)
+    association_rules4 = create_rules(freq_items4, item_support_dict4, min_confidence = 0.9)
     
 
     class SetEncoder(json.JSONEncoder):
@@ -224,8 +222,9 @@ def asosiasiData():
                 return list(obj)
             return json.JSONEncoder.default(self, obj)
     #data = json.dumps(list(data_result), cls=SetEncoder)
-    return json.dumps(list(associationResults_2), cls=SetEncoder)
-
+    #return "aturan asosiasi", json.dumps(list(association_rules3['0']), cls=SetEncoder)
+    #return "aturan asosiasi" + str(list(association_rules3[0][0]))
+    return render_template('asosiasiData.html',submenu=asosiasiData, details1=list(association_rules1),details2=list(association_rules2),details3=list(association_rules3),details4=list(association_rules4))
 
 @app.route("/asosiasi",methods=['GET','POST'])
 def asosiasi():
