@@ -1,4 +1,4 @@
-from re import I
+import re
 import pymysql
 pymysql.install_as_MySQLdb()
 from flask import Flask, render_template, request, redirect, url_for,session
@@ -32,6 +32,32 @@ app.config['SECRET_KEY'] = 'super secret key'
 
 mysql = MySQL(app)
 
+@app.route('/register', methods =['GET', 'POST'])
+def register():
+    msg = ''
+    if request.method == 'POST' and 'username' in request.form and 'password' in request.form :
+        username = request.form['username']
+        password = request.form['password']
+        
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT * FROM accounts WHERE username = % s', (username, ))
+        account = cursor.fetchone()
+        if account:
+            msg = 'Account already exists !'
+      
+        elif not re.match(r'[A-Za-z0-9]+', username):
+            msg = 'Username must contain only characters and numbers !'
+        elif not username or not password:
+            msg = 'Please fill out the form !'
+        else:
+            cursor.execute('INSERT INTO accounts(username, password) VALUES (% s, % s)', (username, password ))
+            mysql.connection.commit()
+            msg = 'You have successfully registered !'
+            return redirect(url_for('login',msg=msg))
+    elif request.method == 'POST':
+        msg = 'Please fill out the form !'
+    return render_template('register.html', msg = msg)
+
 @app.route("/login", methods=['GET','POST'])
 def login():
     msg = ''
@@ -59,14 +85,16 @@ def login():
             msg = 'Incorrect username/password!'
     return render_template("login.html", msg="")
 
-@app.route('/login/logout')
+@app.route('/logout', methods = ['POST'])
 def logout():
-    # Remove session data, this will log the user out
-   session.pop('loggedin', None)
-   session.pop('id', None)
-   session.pop('username', None)
-   # Redirect to login page
-   return redirect(url_for('login'))
+    if request.method == "POST":
+        # Remove session data, this will log the user out
+        session.pop('loggedin', None)
+        session.pop('id', None)
+        session.pop('username', None)
+        # Redirect to login page
+    return redirect(url_for('login'))
+
 
 
 #Create function to convert/process dataset for association
@@ -102,7 +130,7 @@ def datapenilaian():
         cur = mysql.connection.cursor()
         result = cur.execute("SELECT * FROM nilai2021")
         userDetails = cur.fetchall()
-        return render_template('datapenilaian.html', userDetails=userDetails)
+        return render_template('datapenilaian.html', userDetails=userDetails,username=session['username'])
     else:
         return redirect(url_for('login'))
 
@@ -204,7 +232,7 @@ def clustering():
             return redirect(url_for('clusteringResult'))
         # return render_template("clustering.html", 
         #column_names=data_numeric.columns.values, row_data=list(data_numeric.values.tolist()),zip = zip)
-        return render_template("clustering.html",menu="data",submenu="clustering",text="sukses")
+        return render_template("clustering.html",menu="data",submenu="clustering",text="sukses",username=session['username'])
     else:
         return redirect(url_for('login'))
 
@@ -280,7 +308,7 @@ def asosiasiData():
         #data = json.dumps(list(data_result), cls=SetEncoder)
         #return "aturan asosiasi", json.dumps(list(association_rules3['0']), cls=SetEncoder)
         #return "aturan asosiasi" + str(list(association_rules3[0][0]))
-        return render_template('asosiasiData.html',submenu=asosiasiData, details1=list(association_rules1),details2=list(association_rules2),details3=list(association_rules3),details4=list(association_rules4))
+        return render_template('asosiasiData.html',submenu=asosiasiData, details1=list(association_rules1),details2=list(association_rules2),details3=list(association_rules3),details4=list(association_rules4),username=session['username'])
     else:
         return redirect(url_for('login'))
 
@@ -317,7 +345,7 @@ def asosiasi():
         
         
             return json.dumps(association_results, cls=SetEncoder)
-        return render_template("asosiasi.html", menu="data",submenu="asosiasi")
+        return render_template("asosiasi.html", menu="data",submenu="asosiasi",username=session['username'])
     else:
         return redirect(url_for('login'))
 
