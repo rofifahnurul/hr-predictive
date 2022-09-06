@@ -12,3 +12,10 @@ CREATE TABLE nilai2021(
     -> lebihCepat FLOAT NULL, 
     -> aktifBersama FLOAT NULL,
     -> PRIMARY KEY(id));
+
+CREATE TABLE accounts(
+    -> id INT(11) NOT NULL AUTO_INCREMENT,
+    -> username varchar(50) NOT NULL,
+    -> password varchar(255) NOT NULL,
+    -> PRIMARY KEY (id)
+    -> );
