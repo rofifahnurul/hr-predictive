@@ -29,24 +29,43 @@
 </head>
 
 <!-- Content Wrapper. Contains page content -->
-<div class="">
-    <section class="content">
-        <div class="container-fluid">
+<body class="hold-transition login-page">
+    <div class="msg">
+        {{msg}}
+
+    </div>
+    <div class="login-box">
+        <div class="login-logo">
+            <a href="../../index2.html"><b>Register</b>Page</a>
+        </div>
+        <div class="card">
+            <div class="card-body login-card-body">
+                <p class="login-box-msg">Register a new account</p>
             <form action="{{url_for('register')}}" method='POST'>
 
-                <div class="form-group">
-                    <label for="name">Username</label>
-                    <input type="text" class="form-control" name="username" id="username" required>
+                <div class="input-group mb-3">
+                   
+                    <input type="text" class="form-control" name="username" id="username" placeholder="Username" required>
+                    <div class="input-group-append">
+                        <div class="input-group-text">
+                            <span class="fas fa-user"></span>
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="name">Password</label>
-                    <input type="password" class="form-control" name="password" id="password" required>
-                </div>
-                <div class="msg">{{msg}}</div>
-                <div class="form-group">
 
-                    <input type="submit" class="btn btn-success" name="submit" value="Sign Up">
-                    <p class="bottom">Already have an account? <a class="bottom" href="{{url_for('login')}}"> Sign In here</a></p>
+                <div class="input-group mb-3">
+                    <input type="password" class="form-control" name="password" id="password" placeholder="Password" required>
+                    <div class="input-group-append">
+                        <div class="input-group-text">
+                            <span class="fas fa-lock"></span>
+                        </div>
+                    </div>
+                </div>
+               
+                <div class="input-group mt-3">
+
+                    <input type="submit" class="btn btn-primary btn-block" name="submit" value="Register">
+                    <p class="bottom m-2">Already have an account? <a class="bottom" href="{{url_for('login')}}"> Sign In here</a></p>
                 </div>
             </form>
         </div>
