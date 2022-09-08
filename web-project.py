@@ -14,6 +14,10 @@ from apyori import apriori
 import json
 from aprioriScratch import *
 
+import plotly
+import plotly.express as px
+
+from sklearn.decomposition import PCA 
 
 UPLOAD_FOLDER = '/file'
 ALLOWED_EXTENSIONS = {'csv', 'xls','xlsx'}
@@ -31,6 +35,8 @@ app.config['SESSION_TYPE'] = 'memcached'
 app.config['SECRET_KEY'] = 'super secret key'
 
 mysql = MySQL(app)
+
+
 
 @app.route('/register', methods =['GET', 'POST'])
 def register():
@@ -83,7 +89,7 @@ def login():
         else:
         # Account doesnt exist or username/password incorrect
             msg = 'Incorrect username/password!'
-    return render_template("login.html", msg="")
+    return render_template("login.html", msg=msg)
 
 @app.route('/logout', methods = ['POST'])
 def logout():
@@ -113,6 +119,8 @@ def create_check(cluster,column_name,data):
   cluster[column_new] = result 
   data[column_new]=result
 
+
+
 #Create route for main page
 @app.route("/")
 def main():
@@ -141,7 +149,22 @@ def clusteringResult():
         cur = mysql.connection.cursor()
         result = cur.execute("SELECT * FROM nilai2021")
         userDetails = cur.fetchall()
-        return render_template('clustering-result.html', userDetails=userDetails)
+        conn = mysql.connection
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM nilai2021")
+        columnNames  = cur.description
+
+        #add to dataframe
+        df= [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
+        df= pd.DataFrame(df)
+        x = df.iloc[:,2:-1]
+        pca = PCA(n_components=3)
+        X_pca = pca.fit_transform(x)
+        var = pca.explained_variance_ratio_.cumsum()
+        fig1 = px.bar(range(1,len(var)+ 1), var,title='Cumulative explained variance')
+        graph1JSON = json.dumps(fig1, cls=plotly.utils.PlotlyJSONEncoder)
+         
+        return render_template('clustering-result.html', userDetails=userDetails,graph1JSON=graph1JSON)
     else:
         return redirect(url_for('login'))
 
@@ -229,6 +252,8 @@ def clustering():
                 '''
                 cur.execute("INSERT INTO nilai2021(nik,kpi,performance,competency,learning,kerjaIbadah,apresiasi,lebihCepat,aktifBersama,cluster) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",(nik,kpi,performance,competency,learning,ki,apresiasi,lc,ab,cluster))
                 mysql.connection.commit()
+
+           
             return redirect(url_for('clusteringResult'))
         # return render_template("clustering.html", 
         #column_names=data_numeric.columns.values, row_data=list(data_numeric.values.tolist()),zip = zip)
