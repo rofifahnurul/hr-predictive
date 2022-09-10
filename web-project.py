@@ -101,8 +101,6 @@ def logout():
         # Redirect to login page
     return redirect(url_for('login'))
 
-
-
 #Create function to convert/process dataset for association
 def create_check(cluster,column_name,data):
   result = []
@@ -118,7 +116,6 @@ def create_check(cluster,column_name,data):
   column_new = str(column_name) + "_check"
   cluster[column_new] = result 
   data[column_new]=result
-
 
 
 #Create route for main page
@@ -142,6 +139,56 @@ def datapenilaian():
     else:
         return redirect(url_for('login'))
 
+#Create route to data penilaian to show employee name 
+app.config['UPLOAD_FOLDER'] = '/Users/agussuyono/documents/hr-predictive/file'
+@app.route("/uploadFile", methods=['GET','POST'])
+def uploadFile():
+    if 'loggedin' in session: 
+        status = 0
+
+        if request.method == 'POST':
+            date = request.form['date']
+            date = date.split("/")
+            date = date[2].split(" ")
+
+            #get year using int(date[0])
+            year = int(date[0])
+            if request.files:
+                file = request.files["file"]
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'],file.filename))
+                msg="File already saved"
+                #get ext : file.filename.rsplit('.', 1)[1].lower()
+                status = 1
+                #return file.filename.rsplit('.', 1)[0]
+            
+        if status == 1:
+            read_file(file.filename)
+            path = "/Users/agussuyono/documents/hr-predictive/file/"+(file.filename)
+            data = pd.read_excel(path)
+
+            column = data.columns
+            for i in range(len(data)):
+                nik = data.loc[i, column[1]]
+                kpi = data.loc[i, column[2]]
+                performance = data.loc[i, column[3]]
+                competency = data.loc[i, column[4]]
+                learning = data.loc[i, column[5]]
+                ki = data.loc[i, column[6]]
+                apresiasi = data.loc[i, column[7]]
+                lc = data.loc[i, column[8]]
+                ab = data.loc[i, column[9]]
+                
+                cur = mysql.connection.cursor()
+                cur.execute("INSERT INTO penilaian(tahun,nik,kpi,performance,competency,learning,kerjaIbadah,apresiasi,lebihCepat,aktifBersama) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",(year,nik,kpi,performance,competency,learning,ki,apresiasi,lc,ab))
+                mysql.connection.commit()
+            return redirect(url_for('datapenilaian'))
+
+        return redirect(url_for('datapenilaian'))
+    else:
+        return redirect(url_for('login'))
+
+
+'''
 #Create route to clustering result to show clustering result from database
 @app.route("/clusteringResult", methods=['GET','POST'])
 def clusteringResult():
@@ -171,43 +218,30 @@ def clusteringResult():
             return render_template('clustering-result.html', userDetails=userDetails,graph1JSON=graph1JSON)
     else:
         return redirect(url_for('login'))
+        
 
-#Create route to clustering process (input data and process it to database)
-app.config['UPLOAD_FOLDER'] = '/Users/agussuyono/documents/project-skripsi/file'
-@app.route('/clustering', methods=['GET','POST'])
-def clustering():
+@app.route('/clusteringProcess', methods=['GET','POST'])
+def clusteringProcess():
     date = ""
     if 'loggedin' in session:   
         status = 0
     
-    #collect fata from uploaded file
+        #collect data from uploaded file
         if request.method == 'POST':
-    
-       
-            date = request.form['date']
-            date = date.split("/")
-            date = date[2].split(" ")
-            #get year using int(date[0])
-            year = int(date[0])
-            if request.files:
-                file = request.files["file"]
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'],file.filename))
-                print("Image saved")
-                #get ext : file.filename.rsplit('.', 1)[1].lower()
-                status = 1
-                #return file.filename.rsplit('.', 1)[0]
+            year = request.form['year']
+            conn = mysql.connection
+            cur = conn.cursor()
+            result = cur.execute("SELECT * FROM penilaian")
             
-        if status == 1:
-            read_file(file.filename)
-            path = "/Users/agussuyono/documents/project-skripsi/file/"+(file.filename)
-            data = pd.read_excel(path)
-            data_numeric = data.iloc[:,2:10]
-            #preprocess(file.filename)
-            #return redirect(request.url)
+            cur.execute("SELECT * FROM penilaian WHERE tahun = ?",year)
+            columnNames  = cur.description
 
-            '''
-            Clustering Process
-            '''
+          
+       
+
+       
+            #Clustering Process
+       
             with open ('centroids.pkl','rb') as file:
                 centroid = pickle.load(file)
 
@@ -260,9 +294,9 @@ def clustering():
                 ab = data.loc[i, column[9]]
                 cluster = data.loc[i, column[10]]
 
-                '''
-                Clustering result is added to database 
-                '''
+              
+                #Clustering result is added to database 
+          
                 cur.execute("INSERT INTO penilaian(tahun,nik,kpi,performance,competency,learning,kerjaIbadah,apresiasi,lebihCepat,aktifBersama,cluster) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",(year,nik,kpi,performance,competency,learning,ki,apresiasi,lc,ab,cluster))
                 mysql.connection.commit()
 
@@ -275,7 +309,110 @@ def clustering():
      
     else:
         return redirect(url_for('login'))
+#Create route to clustering process (input data and process it to database)
+app.config['UPLOAD_FOLDER'] = '/Users/agussuyono/documents/hr-predictive/file'
+@app.route('/clustering', methods=['GET','POST'])
+def clustering():
+    date = ""
+    if 'loggedin' in session:   
+        status = 0
+    
+        #collect data from uploaded file
+        if request.method == 'POST':
+    
+            date = request.form['date']
+            date = date.split("/")
+            date = date[2].split(" ")
 
+            #get year using int(date[0])
+            year = int(date[0])
+            if request.files:
+                file = request.files["file"]
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'],file.filename))
+                msg="File already saved"
+                #get ext : file.filename.rsplit('.', 1)[1].lower()
+                status = 1
+                #return file.filename.rsplit('.', 1)[0]
+            
+        if status == 1:
+            read_file(file.filename)
+            path = "/Users/agussuyono/documents/hr-predictive/file/"+(file.filename)
+            data = pd.read_excel(path)
+            data_numeric = data.iloc[:,2:10]
+            #preprocess(file.filename)
+            #return redirect(request.url)
+
+
+            #Clustering Process
+       
+            with open ('centroids.pkl','rb') as file:
+                centroid = pickle.load(file)
+
+            diff = 1
+            j=0
+            K=4
+
+            XD=data_numeric
+            i=1
+            for index1, row_c in centroid.iterrows():
+                ED=[]
+                for index2, row_d in XD.iterrows():
+                    d1 = (row_d["PK"]-row_c["PK"])**2
+                    d2 = (row_d["PERFORMANCE"]-row_c["PERFORMANCE"])**2
+                    d3 = (row_d["COMPETENCY"]-row_c["COMPETENCY"])**2
+                    d4 = (row_d["LEARNING POINT"]-row_c["LEARNING POINT"])**2
+                    d5 = (row_d["Kerja Ibadah"]-row_c["Kerja Ibadah"])**2
+                    d6 = (row_d["Apresiasi"]-row_c["Apresiasi"])**2
+                    d7 = (row_d["Lebih cepat"]-row_c["Lebih cepat"])**2
+                    d8 = (row_d["Aktif bersama"]-row_c["Aktif bersama"])**2
+                    d = np.sqrt(d1+d2+d3+d4+d5+d6+d7+d8)
+                    ED.append(d)
+                data_numeric[i]=ED
+                i=i+1
+
+            C=[]
+            for index,row in data_numeric.iterrows():
+                min_dist=row[1]
+                pos=1
+                for i in range(K):
+                    if row[i+1] < int(min_dist):
+                        min_dist = row[i+1]
+                        pos=i+1
+                C.append(pos)
+            data_numeric["Cluster"]=C
+            data["Cluster"] =C
+            cur = mysql.connection.cursor()
+            #cur.execute("SELECT * FROM test")
+            #id = cur.lastrowid
+            column = data.columns
+            for i in range(len(data)):
+                nik = data.loc[i, column[1]]
+                kpi = data.loc[i, column[2]]
+                performance = data.loc[i, column[3]]
+                competency = data.loc[i, column[4]]
+                learning = data.loc[i, column[5]]
+                ki = data.loc[i, column[6]]
+                apresiasi = data.loc[i, column[7]]
+                lc = data.loc[i, column[8]]
+                ab = data.loc[i, column[9]]
+                cluster = data.loc[i, column[10]]
+
+              
+                Clustering result is added to database 
+             
+                cur.execute("INSERT INTO penilaian(tahun,nik,kpi,performance,competency,learning,kerjaIbadah,apresiasi,lebihCepat,aktifBersama,cluster) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",(year,nik,kpi,performance,competency,learning,ki,apresiasi,lc,ab,cluster))
+                mysql.connection.commit()
+
+           
+            return redirect(url_for('clusteringResult'))
+          
+        # return render_template("clustering.html", 
+        #column_names=data_numeric.columns.values, row_data=list(data_numeric.values.tolist()),zip = zip)
+        return render_template("clustering.html",menu="data",submenu="clustering",text="sukses",username=session['username'],date=date)
+     
+    else:
+        return redirect(url_for('login'))
+'''
 #route for create association from database
 @app.route("/asosiasiData")
 def asosiasiData():
@@ -415,7 +552,7 @@ def delete(id_data):
     if 'loggedin' in session: 
         #flash("Record Has Been Deleted Successfully")
         cur = mysql.connection.cursor()
-        cur.execute("DELETE FROM test WHERE id=%s", (id_data,))
+        cur.execute("DELETE FROM penilaian WHERE id=%s", (id_data,))
         mysql.connection.commit()
         return redirect(url_for('datapenilaian'))
     else:
