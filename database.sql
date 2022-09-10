@@ -1,6 +1,6 @@
 CREATE database hr;
 use hr;
-CREATE TABLE nilai2021(
+CREATE TABLE penilaian(
     -> id INT NOT NULL AUTO_INCREMENT,
     -> nik VARCHAR(15) NULL,
     -> kpi FLOAT NULL,
@@ -11,6 +11,7 @@ CREATE TABLE nilai2021(
     -> apresiasi FLOAT NULL,
     -> lebihCepat FLOAT NULL, 
     -> aktifBersama FLOAT NULL,
+    -> tahun INT,
     -> PRIMARY KEY(id));
 
 CREATE TABLE accounts(
