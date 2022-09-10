@@ -136,7 +136,7 @@ def main():
 def datapenilaian():
     if 'loggedin' in session:   
         cur = mysql.connection.cursor()
-        result = cur.execute("SELECT * FROM nilai2021")
+        result = cur.execute("SELECT * FROM penilaian")
         userDetails = cur.fetchall()
         return render_template('datapenilaian.html', userDetails=userDetails,username=session['username'])
     else:
@@ -147,24 +147,28 @@ def datapenilaian():
 def clusteringResult():
     if 'loggedin' in session:   
         cur = mysql.connection.cursor()
-        result = cur.execute("SELECT * FROM nilai2021")
+        result = cur.execute("SELECT * FROM penilaian")
         userDetails = cur.fetchall()
         conn = mysql.connection
         cur = conn.cursor()
-        cur.execute("SELECT * FROM nilai2021")
+        cur.execute("SELECT * FROM penilaian")
         columnNames  = cur.description
+        if not result:
+            msg = "Table is empty"
+            return render_template('clustering-result.html', userDetails=userDetails)
+        else:
 
-        #add to dataframe
-        df= [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
-        df= pd.DataFrame(df)
-        x = df.iloc[:,2:-1]
-        pca = PCA(n_components=3)
-        X_pca = pca.fit_transform(x)
-        var = pca.explained_variance_ratio_.cumsum()
-        fig1 = px.bar(range(1,len(var)+ 1), var,title='Cumulative explained variance')
-        graph1JSON = json.dumps(fig1, cls=plotly.utils.PlotlyJSONEncoder)
+            #add to dataframe
+            df= [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
+            df= pd.DataFrame(df)
+            x = df.iloc[:,2:-1]
+            pca = PCA(n_components=3)
+            X_pca = pca.fit_transform(x)
+            var = pca.explained_variance_ratio_.cumsum()
+            fig1 = px.bar(range(1,len(var)+ 1), var,title='Cumulative explained variance')
+            graph1JSON = json.dumps(fig1, cls=plotly.utils.PlotlyJSONEncoder)
          
-        return render_template('clustering-result.html', userDetails=userDetails,graph1JSON=graph1JSON)
+            return render_template('clustering-result.html', userDetails=userDetails,graph1JSON=graph1JSON)
     else:
         return redirect(url_for('login'))
 
@@ -172,11 +176,19 @@ def clusteringResult():
 app.config['UPLOAD_FOLDER'] = '/Users/agussuyono/documents/project-skripsi/file'
 @app.route('/clustering', methods=['GET','POST'])
 def clustering():
+    date = ""
     if 'loggedin' in session:   
         status = 0
     
     #collect fata from uploaded file
         if request.method == 'POST':
+    
+       
+            date = request.form['date']
+            date = date.split("/")
+            date = date[2].split(" ")
+            #get year using int(date[0])
+            year = int(date[0])
             if request.files:
                 file = request.files["file"]
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'],file.filename))
@@ -184,6 +196,7 @@ def clustering():
                 #get ext : file.filename.rsplit('.', 1)[1].lower()
                 status = 1
                 #return file.filename.rsplit('.', 1)[0]
+            
         if status == 1:
             read_file(file.filename)
             path = "/Users/agussuyono/documents/project-skripsi/file/"+(file.filename)
@@ -250,14 +263,16 @@ def clustering():
                 '''
                 Clustering result is added to database 
                 '''
-                cur.execute("INSERT INTO nilai2021(nik,kpi,performance,competency,learning,kerjaIbadah,apresiasi,lebihCepat,aktifBersama,cluster) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",(nik,kpi,performance,competency,learning,ki,apresiasi,lc,ab,cluster))
+                cur.execute("INSERT INTO penilaian(tahun,nik,kpi,performance,competency,learning,kerjaIbadah,apresiasi,lebihCepat,aktifBersama,cluster) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",(year,nik,kpi,performance,competency,learning,ki,apresiasi,lc,ab,cluster))
                 mysql.connection.commit()
 
            
             return redirect(url_for('clusteringResult'))
+          
         # return render_template("clustering.html", 
         #column_names=data_numeric.columns.values, row_data=list(data_numeric.values.tolist()),zip = zip)
-        return render_template("clustering.html",menu="data",submenu="clustering",text="sukses",username=session['username'])
+        return render_template("clustering.html",menu="data",submenu="clustering",text="sukses",username=session['username'],date=date)
+     
     else:
         return redirect(url_for('login'))
 
@@ -268,72 +283,78 @@ def asosiasiData():
         #make connection and sql query
         conn = mysql.connection
         cur = conn.cursor()
-        cur.execute("SELECT * FROM nilai2021")
+        result = cur.execute("SELECT * FROM penilaian")
+        cur.execute("SELECT * FROM penilaian")
         columnNames  = cur.description
 
-        #add to dataframe
-        dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
-        data = pd.DataFrame(dataResult)
-        column = data.columns
+        if not result:
+            msg = "Table is empty"
+            return render_template('asosiasiData.html')
 
-        #select data
-        cluster1 = data.loc[data['cluster'] == 1]
-        cluster2 = data.loc[data['cluster'] == 2]
-        cluster3 = data.loc[data['cluster'] == 3]
-        cluster4 = data.loc[data['cluster'] == 4]
+        else:
+            #add to dataframe
+            dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
+            data = pd.DataFrame(dataResult)
+            column = data.columns
 
-        #prepare to make a new dataframe (make categorical value for each cluster)
-        data1 = pd.DataFrame()
-        for i in range (2,10):
-            create_check(cluster1,column[i],data1)
+            #select data
+            cluster1 = data.loc[data['cluster'] == 1]
+            cluster2 = data.loc[data['cluster'] == 2]
+            cluster3 = data.loc[data['cluster'] == 3]
+            cluster4 = data.loc[data['cluster'] == 4]
+
+            #prepare to make a new dataframe (make categorical value for each cluster)
+            data1 = pd.DataFrame()
+            for i in range (2,10):
+                create_check(cluster1,column[i],data1)
     
-        data2 = pd.DataFrame()
-        for i in range (2,10):
-            create_check(cluster2,column[i],data2)
+            data2 = pd.DataFrame()
+            for i in range (2,10):
+                create_check(cluster2,column[i],data2)
 
-        data3 = pd.DataFrame()
-        for i in range (2,10):
-            create_check(cluster3,column[i],data3)
+            data3 = pd.DataFrame()
+            for i in range (2,10):
+                create_check(cluster3,column[i],data3)
     
-        data4 = pd.DataFrame()
-        for i in range (2,10):
-            create_check(cluster4,column[i],data4)
+            data4 = pd.DataFrame()
+            for i in range (2,10):
+                create_check(cluster4,column[i],data4)
 
-        '''
-        Make association rules for each cluster
+            '''
+            Make association rules for each cluster
     
-        '''
-        #for i in range(0, len(data3)):
-        #    records3.append([str(data3.values[i,j]) for j in range(0, 8)])
-        #associationRules_3 = apriori(records3, min_support=0.55, min_confidence=0.9, min_length = 2)
-        #associationResults_3 = list(associationRules_3)
+            '''
+            #for i in range(0, len(data3)):
+            #    records3.append([str(data3.values[i,j]) for j in range(0, 8)])
+            #associationRules_3 = apriori(records3, min_support=0.55, min_confidence=0.9, min_length = 2)
+            #associationResults_3 = list(associationRules_3)
 
-        records1 = np.array(data1)
-        freq_items1, item_support_dict1 = aprioriFunc(records1, min_support = 0.55)
-        association_rules1 = create_rules(freq_items1, item_support_dict1, min_confidence = 0.9)
+            records1 = np.array(data1)
+            freq_items1, item_support_dict1 = aprioriFunc(records1, min_support = 0.55)
+            association_rules1 = create_rules(freq_items1, item_support_dict1, min_confidence = 0.9)
 
-        records2 = np.array(data2)
-        freq_items2, item_support_dict2 = aprioriFunc(records2, min_support = 0.55)
-        association_rules2 = create_rules(freq_items2, item_support_dict2, min_confidence = 0.9)
+            records2 = np.array(data2)
+            freq_items2, item_support_dict2 = aprioriFunc(records2, min_support = 0.55)
+            association_rules2 = create_rules(freq_items2, item_support_dict2, min_confidence = 0.9)
 
-        records3 = np.array(data3)
-        freq_items3, item_support_dict3 = aprioriFunc(records3, min_support = 0.55)
-        association_rules3 = create_rules(freq_items3, item_support_dict3, min_confidence = 0.9)
+            records3 = np.array(data3)
+            freq_items3, item_support_dict3 = aprioriFunc(records3, min_support = 0.55)
+            association_rules3 = create_rules(freq_items3, item_support_dict3, min_confidence = 0.9)
     
-        records4 = np.array(data4)
-        freq_items4, item_support_dict4 = aprioriFunc(records4, min_support = 0.55)
-        association_rules4 = create_rules(freq_items4, item_support_dict4, min_confidence = 0.9)
+            records4 = np.array(data4)
+            freq_items4, item_support_dict4 = aprioriFunc(records4, min_support = 0.55)
+            association_rules4 = create_rules(freq_items4, item_support_dict4, min_confidence = 0.9)
     
 
-        class SetEncoder(json.JSONEncoder):
-            def default(self, obj):
-                if isinstance(obj, frozenset):
-                    return list(obj)
-                return json.JSONEncoder.default(self, obj)
-        #data = json.dumps(list(data_result), cls=SetEncoder)
-        #return "aturan asosiasi", json.dumps(list(association_rules3['0']), cls=SetEncoder)
-        #return "aturan asosiasi" + str(list(association_rules3[0][0]))
-        return render_template('asosiasiData.html',submenu=asosiasiData, details1=list(association_rules1),details2=list(association_rules2),details3=list(association_rules3),details4=list(association_rules4),username=session['username'])
+            class SetEncoder(json.JSONEncoder):
+                def default(self, obj):
+                    if isinstance(obj, frozenset):
+                        return list(obj)
+                    return json.JSONEncoder.default(self, obj)
+            #data = json.dumps(list(data_result), cls=SetEncoder)
+            #return "aturan asosiasi", json.dumps(list(association_rules3['0']), cls=SetEncoder)
+            #return "aturan asosiasi" + str(list(association_rules3[0][0]))
+            return render_template('asosiasiData.html',submenu=asosiasiData, details1=list(association_rules1),details2=list(association_rules2),details3=list(association_rules3),details4=list(association_rules4),username=session['username'])
     else:
         return redirect(url_for('login'))
 
