@@ -8,12 +8,11 @@ from cluster_process import *
 import MySQLdb.cursors
 from werkzeug.utils import secure_filename
 import os
-import pickle
 import pandas as pd
 from apyori import apriori
 import json
 from aprioriScratch import *
-
+from kmeansScratch import *
 import plotly
 import plotly.express as px
 
@@ -186,6 +185,103 @@ def uploadFile():
         return redirect(url_for('datapenilaian'))
     else:
         return redirect(url_for('login'))
+
+#Create route to data penilaian to show employee name 
+@app.route("/clusterProcess", methods=['GET','POST'])
+def clusterProcess():
+    if 'loggedin' in session: 
+        if request.method == 'POST':
+            dataSelect = request.form['dataSelect']
+            conn = mysql.connection
+            cur = conn.cursor()   
+
+            if dataSelect == "Semua data":
+                result = cur.execute("SELECT * FROM penilaian")
+                if not result:
+                    msg = "Table is empty"
+                    return render_template('datapenilaian.html')
+                else:
+                    cur.execute("SELECT * FROM penilaian")
+                    columnNames  = cur.description
+                    dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
+                    data = pd.DataFrame(dataResult)
+                    data_numeric = data.iloc[:,2:10]
+                   
+
+                    data, data_numeric = kmeans(data,data_numeric)
+
+                    cur = mysql.connection.cursor()
+
+                    #cur.execute("SELECT * FROM test")
+                    #id = cur.lastrowid
+                    column = data.columns
+                    for i in range(len(data)):
+                        id = data.loc[i, column[0]]
+                        cluster = data.loc[i, column[10]]
+
+                        #Clustering result is added to database           
+                        cur.execute("UPDATE penilaian SET cluster = %s WHERE id = %s",(cluster,id))
+                        mysql.connection.commit()
+
+                    return redirect(url_for('clusteringResult'))
+
+            else:
+                year = dataSelect
+                result = cur.execute("SELECT * FROM penilaian WHERE tahun = %s" ,year)
+                if not result:
+                    msg = "Table is empty"
+                    return render_template('datapenilaian.html')
+                else:
+                    
+                    cur.execute("SELECT * FROM penilaian WHERE tahun = %s" ,year)
+                    columnNames  = cur.description
+                    dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
+                    data = pd.DataFrame(dataResult)
+                    data_numeric = data.iloc[:,2:10]
+
+                    data, data_numeric = kmeans(data,data_numeric)
+
+                    cur = mysql.connection.cursor()
+
+                    #cur.execute("SELECT * FROM test")
+                    #id = cur.lastrowid
+                    column = data.columns
+                    for i in range(len(data)):
+                        id = data.loc[i, column[0]]
+                        cluster = data.loc[i, column[10]]
+
+                        #Clustering result is added to database           
+                        cur.execute("UPDATE penilaian SET cluster = %s WHERE id = %s",(cluster,id))
+                        mysql.connection.commit()
+
+                    return redirect(url_for('clusteringResult'))
+
+        return redirect(url_for('clusteringResult'))
+    else:
+        return redirect(url_for('login'))
+
+
+#Create route to clustering result to show clustering result from database
+@app.route("/clusteringResult", methods=['GET','POST'])
+def clusteringResult():
+    if 'loggedin' in session:   
+        cur = mysql.connection.cursor()
+        result = cur.execute("SELECT * FROM penilaian")
+        userDetails = cur.fetchall()
+        conn = mysql.connection
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM penilaian")
+        columnNames  = cur.description
+        if not result:
+            msg = "Table is empty"
+            return render_template('clustering-result.html', userDetails=userDetails)
+        else:
+      
+            return render_template('clustering-result.html', userDetails=userDetails)
+    else:
+        return redirect(url_for('login'))
+        
+
 
 
 '''
