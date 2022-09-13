@@ -1,3 +1,4 @@
+from concurrent.futures import process
 import re
 import pymysql
 pymysql.install_as_MySQLdb()
@@ -15,7 +16,7 @@ from aprioriScratch import *
 from kmeansScratch import *
 import plotly
 import plotly.express as px
-
+from dash_app import create_dash_application
 from sklearn.decomposition import PCA 
 
 UPLOAD_FOLDER = '/file'
@@ -34,8 +35,21 @@ app.config['SESSION_TYPE'] = 'memcached'
 app.config['SECRET_KEY'] = 'super secret key'
 
 mysql = MySQL(app)
-
-
+create_dash_application(app)
+def create_check(cluster,column_name,data):
+  result = []
+  for value in cluster[column_name]:
+    avg = cluster[column_name].mean()
+    if float(value) >= float(avg):
+      string = str(column_name)+">=" + str(cluster[column_name].mean())
+      result.append(string) 
+      
+    else:
+      string = str(column_name)+"<" + str(cluster[column_name].mean())
+      result.append(string)
+  column_new = str(column_name) + "_check"
+  cluster[column_new] = result 
+  data[column_new]=result
 
 @app.route('/register', methods =['GET', 'POST'])
 def register():
@@ -101,21 +115,6 @@ def logout():
     return redirect(url_for('login'))
 
 #Create function to convert/process dataset for association
-def create_check(cluster,column_name,data):
-  result = []
-  for value in cluster[column_name]:
-    avg = cluster[column_name].mean()
-    if float(value) >= float(avg):
-      string = str(column_name)+">=" + str(cluster[column_name].mean())
-      result.append(string) 
-      
-    else:
-      string = str(column_name)+"<" + str(cluster[column_name].mean())
-      result.append(string)
-  column_new = str(column_name) + "_check"
-  cluster[column_new] = result 
-  data[column_new]=result
-
 
 #Create route for main page
 @app.route("/")
@@ -161,21 +160,22 @@ def uploadFile():
                 #return file.filename.rsplit('.', 1)[0]
             
         if status == 1:
-            read_file(file.filename)
+            
             path = "/Users/agussuyono/documents/hr-predictive/file/"+(file.filename)
-            data = pd.read_excel(path)
+            #data = pd.read_excel(path)
+            data = pd.read_csv(path)
 
             column = data.columns
             for i in range(len(data)):
-                nik = data.loc[i, column[1]]
-                kpi = data.loc[i, column[2]]
-                performance = data.loc[i, column[3]]
-                competency = data.loc[i, column[4]]
-                learning = data.loc[i, column[5]]
-                ki = data.loc[i, column[6]]
-                apresiasi = data.loc[i, column[7]]
-                lc = data.loc[i, column[8]]
-                ab = data.loc[i, column[9]]
+                nik = data.loc[i, column[0]]
+                kpi = data.loc[i, column[1]]
+                performance = data.loc[i, column[2]]
+                competency = data.loc[i, column[3]]
+                learning = data.loc[i, column[4]]
+                ki = data.loc[i, column[5]]
+                apresiasi = data.loc[i, column[6]]
+                lc = data.loc[i, column[7]]
+                ab = data.loc[i, column[8]]
                 
                 cur = mysql.connection.cursor()
                 cur.execute("INSERT INTO penilaian(tahun,nik,kpi,performance,competency,learning,kerjaIbadah,apresiasi,lebihCepat,aktifBersama) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",(year,nik,kpi,performance,competency,learning,ki,apresiasi,lc,ab))
@@ -201,29 +201,151 @@ def clusterProcess():
                     msg = "Table is empty"
                     return render_template('datapenilaian.html')
                 else:
+                    '''
+                    conn = mysql.connection
+                    cur = conn.cursor()     
                     cur.execute("SELECT * FROM penilaian")
                     columnNames  = cur.description
                     dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
                     data = pd.DataFrame(dataResult)
                     data_numeric = data.iloc[:,2:10]
-                   
+                    
 
-                    data, data_numeric = kmeans(data,data_numeric)
+                    K=4
+                    Centroids = data_numeric.sample(n=K)
+                    tes = data_numeric.sample(n=K)
+                    
+                    '''
+                    path = "/Users/agussuyono/documents/hr-predictive/hasil-data-fix.csv"
+                    data = pd.read_csv(path)
+                    data_numeric = data.iloc[:,1:9]
+                    K=4
+                    path = "/Users/agussuyono/documents/hr-predictive/centroid.csv"
+                    Centroids = pd.read_csv(path)
+                    Centroids = data_numeric.sample(n=K)
+                    
+                    columnC = Centroids.columns
 
+                    diff = 1
+                    j=0
+                    
+                    flag = 0
+                    while (diff!=0):
+                        
+                        XD=data_numeric
+                        column = XD.columns
+                        i=1
+                        for index1, row_c in Centroids.iterrows():
+                            ED=[]
+                            for index2, row_d in XD.iterrows():
+                                d1 = (row_d[column[0]]-row_c[columnC[0]])**2
+                                d2 = (row_d[column[1]]-row_c[columnC[1]])**2
+                                d3 = (row_d[column[2]]-row_c[columnC[2]])**2
+                                d4 = (row_d[column[3]]-row_c[columnC[3]])**2
+                                d5 = (row_d[column[4]]-row_c[columnC[4]])**2
+                                d6 = (row_d[column[5]]-row_c[columnC[5]])**2
+                                d7 = (row_d[column[6]]-row_c[columnC[6]])**2
+                                d8 = (row_d[column[7]]-row_c[columnC[7]])**2
+                                d = np.sqrt(d1+d2+d3+d4+d5+d6+d7+d8)
+                                ED.append(d)
+                            data_numeric[i]=ED
+                            i=i+1
+
+                        C=[]
+                        
+                       
+                        for index,row in data_numeric.iterrows():
+                            min_dist=row[1]
+                            pos=1
+                            for i in range(K-1):
+                                
+                                if row[i+2] < float(min_dist):
+    
+                                    min_dist = row[i+2]
+                                    pos=i+2
+
+                            C.append(pos)
+                            if flag == 0:
+                                cur = mysql.connection.cursor()
+                                cur.execute("INSERT datanums(cluster,satu,dua,tiga,empat) VALUES(%s,%s,%s,%s,%s)",(pos,row[1],row[2],row[3],row[4]))
+                                mysql.connection.commit()
+                                print("Masuk",pos)
+                               
+                            #cur.execute("UPDATE penilaian SET cluster = %s",(pos))
+                            #mysql.connection.commit()
+                            else:
+                                cur = mysql.connection.cursor()
+                                cur.execute("UPDATE datanums SET cluster = %s,satu= %s,dua=%s, tiga=%s,empat=%s",(pos,row[1],row[2],row[3],row[4]))
+                                mysql.connection.commit()
+                                print("update",pos,row[1],row[2],row[3],row[4])
+                        flag+=1
+                        data_numeric["cluster"]=C
+                        data["cluster"] =C
+
+                        Centroids_new = data_numeric.groupby(["cluster"]).mean()[[column[0],column[1],column[2],column[3],
+                        column[4],column[5],column[6],column[7]]]
+
+                        if j == 0:
+                            diff=1
+                            j=j+1
+                        else:
+                            diff = (Centroids_new[column[0]] - Centroids[column[0]]).sum() 
+                            + (Centroids_new[column[1]] - Centroids[column[1]]).sum() 
+                            + (Centroids_new[column[2]] - Centroids[column[2]]).sum() 
+                            + (Centroids_new[column[3]] - Centroids[column[3]]).sum() 
+                            + (Centroids_new[column[4]] - Centroids[column[4]]).sum() 
+                            + (Centroids_new[column[5]] - Centroids[column[5]]).sum() 
+                            + (Centroids_new[column[6]] - Centroids[column[6]]).sum() 
+                            + (Centroids_new[column[7]] - Centroids[column[7]]).sum()
+                            print(diff.sum())
+                        
+                        
+        
+                        Centroids = data_numeric.groupby(["cluster"]).mean()[[column[0],column[1],column[2],column[3],
+                        column[4],column[5],column[6],column[7]]]
+
+                    '''
                     cur = mysql.connection.cursor()
 
                     #cur.execute("SELECT * FROM test")
                     #id = cur.lastrowid
+                    x = len(Centroids)
+                    columnC = Centroids.columns
+                    i = 1
+                    for index1, row_c in Centroids.iterrows():
+                        
+                        kpi = row_c[columnC[0]].round(3)
+                      
+                        performance = row_c[columnC[1]].round(3)
+                        competency = row_c[columnC[2]].round(3)
+                        learning = row_c[columnC[3]].round(3)
+                        ki = row_c[columnC[4]].round(3)
+                        apresiasi = row_c[columnC[5]].round(3)
+                        lc = row_c[columnC[6]].round(3)
+                        ab = row_c[columnC[7]].round(3)
+                        cluster = i
+                        #cur = mysql.connection.cursor()
+                        #cur.execute("INSERT INTO centroid(kpi,performance,competency,learning,kerjaIbadah,apresiasi,lebihCepat,aktifBersama,cluster) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)",(kpi,performance,competency,learning,ki,apresiasi,lc,ab,cluster))
+                        #mysql.connection.commit()
+                        i+=1
+                    
                     column = data.columns
                     for i in range(len(data)):
                         id = data.loc[i, column[0]]
-                        cluster = data.loc[i, column[10]]
+                        cluster = data.loc[i, column[9]]
 
                         #Clustering result is added to database           
                         cur.execute("UPDATE penilaian SET cluster = %s WHERE id = %s",(cluster,id))
                         mysql.connection.commit()
-
-                    return redirect(url_for('clusteringResult'))
+                    '''
+                    #kpi = Centroids.get(column[0])
+                    class SetEncoder(json.JSONEncoder):
+                        def default(self, obj):
+                            if isinstance(obj, frozenset):
+                                return list(obj)
+                            return json.JSONEncoder.default(self, obj)
+                    return "success"
+                    #return str(data_numeric.columns)
 
             else:
                 year = dataSelect
@@ -280,9 +402,147 @@ def clusteringResult():
             return render_template('clustering-result.html', userDetails=userDetails)
     else:
         return redirect(url_for('login'))
-        
 
 
+#Create route to asosiasi process 
+@app.route("/associationProcess", methods=['GET','POST'])
+def associationProcess():
+    if 'loggedin' in session: 
+        #make connection and sql query
+        if request.method == 'POST':
+            dataSelect = request.form['dataSelect']
+            conn = mysql.connection
+            cur = conn.cursor()   
+
+            if dataSelect == "Semua cluster":
+                result = cur.execute("SELECT * FROM penilaian")
+                if not result:
+                    msg = "Table is empty"
+                    return redirect(url_for('clusteringResult'))
+                else:
+                    cur.execute("SELECT * FROM penilaian")
+                    columnNames  = cur.description
+                    dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
+                    data = pd.DataFrame(dataResult)
+                    column = data.columns
+                    
+                    #select data
+                    cluster1 = data.loc[data['cluster'] == 1]
+                    cluster2 = data.loc[data['cluster'] == 2]
+                    cluster3 = data.loc[data['cluster'] == 3]
+                    cluster4 = data.loc[data['cluster'] == 4]
+
+                    #prepare to make a new dataframe (make categorical value for each cluster)
+                    data1 = pd.DataFrame()
+                    for i in range (2,10):
+                        create_check(cluster1,column[i],data1)
+    
+                    data2 = pd.DataFrame()
+                    for i in range (2,10):
+                        create_check(cluster2,column[i],data2)
+
+                    data3 = pd.DataFrame()
+                    for i in range (2,10):
+                        create_check(cluster3,column[i],data3)
+    
+                    data4 = pd.DataFrame()
+                    for i in range (2,10):
+                        create_check(cluster4,column[i],data4)
+
+            
+                    records1 = np.array(data1)
+                    freq_items1, item_support_dict1 = aprioriFunc(records1, min_support = 0.55)
+                    association_rules1 = create_rules(freq_items1, item_support_dict1, min_confidence = 0.9)
+
+                    records2 = np.array(data2)
+                    freq_items2, item_support_dict2 = aprioriFunc(records2, min_support = 0.55)
+                    association_rules2 = create_rules(freq_items2, item_support_dict2, min_confidence = 0.9)
+
+                    records3 = np.array(data3)
+                    freq_items3, item_support_dict3 = aprioriFunc(records3, min_support = 0.55)
+                    association_rules3 = create_rules(freq_items3, item_support_dict3, min_confidence = 0.9)
+    
+                    records4 = np.array(data4)
+                    freq_items4, item_support_dict4 = aprioriFunc(records4, min_support = 0.55)
+                    association_rules4 = create_rules(freq_items4, item_support_dict4, min_confidence = 0.9)
+    
+                    '''
+                    data1 = processData(data, 1, column)
+                    data2 = processData(data, 2, column)
+                    data3 = processData(data, 3, column)
+                    data4 = processData(data, 4, column)
+
+                    len_rights = []
+                    association_rules1 = generateRules(data1)
+                    #len_rights.append(len_right)
+                    association_rules2 = generateRules(data2)
+                    #len_rights.append(len_right)
+                    association_rules3= generateRules(data3)
+                    #len_rights.append(len_right)
+                    association_rules4 = generateRules(data4)
+                    #len_rights.append(len_right)
+                    
+'''
+                    
+                    class SetEncoder(json.JSONEncoder):
+                        def default(self, obj):
+                            if isinstance(obj, frozenset):
+                                return list(obj)
+                            return json.JSONEncoder.default(self, obj)
+                    #return len_rights
+                    return render_template('asosiasiData.html',submenu=asosiasiData, details1=list(association_rules1),details2=list(association_rules2),details3=list(association_rules3),details4=list(association_rules4),username=session['username'])
+                  
+            else:
+                cluster = dataSelect
+                result = cur.execute("SELECT * FROM penilaian WHERE cluster = %s" ,cluster)
+                if not result:
+                    msg = "Table is empty"
+                    return redirect(url_for('clusteringResult'))
+                else:
+                   
+                    cur.execute("SELECT * FROM penilaian WHERE cluster = %s" ,cluster)
+                    columnNames  = cur.description
+                    dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
+                    data = pd.DataFrame(dataResult)
+
+                    data = processData(data, cluster, column)
+                    association_rules = generateRules(data)
+                    class SetEncoder(json.JSONEncoder):
+                        def default(self, obj):
+                            if isinstance(obj, frozenset):
+                                return list(obj)
+                            return json.JSONEncoder.default(self, obj)
+                    
+                    return render_template('asosiasiData.html',submenu=asosiasiData, details1=list(association_rules),username=session['username'])           
+        return render_template('asosiasiData.html',submenu=asosiasiData)
+    else:
+        return redirect(url_for('login'))
+
+@app.route("/viewPCA")
+def viewPCA():  
+    conn = mysql.connection
+    cur = conn.cursor()   
+    cur.execute("SELECT * FROM penilaian")
+    columnNames  = cur.description
+    dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
+    data = pd.DataFrame(dataResult)
+    data_numeric = data.iloc[:,2:10]
+    data_cluster = data.iloc[:,10]
+    xPCA = compPCA(data_numeric,data_cluster)
+    class SetEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, frozenset):
+                return list(obj)
+            return json.JSONEncoder.default(self, obj)
+    #json_list = json.loads(json.dumps(list(xPCA.T.to_dict().values())))
+    result = xPCA.to_json(orient="records")
+    parsed = json.loads(result)
+    json_list= json.dumps(parsed, indent=4)  
+    return json_list
+
+@app.route("/tes")
+def tes():
+    return render_template("tes.html")
 
 '''
 #Create route to clustering result to show clustering result from database
@@ -562,21 +822,7 @@ def asosiasiData():
             #associationRules_3 = apriori(records3, min_support=0.55, min_confidence=0.9, min_length = 2)
             #associationResults_3 = list(associationRules_3)
 
-            records1 = np.array(data1)
-            freq_items1, item_support_dict1 = aprioriFunc(records1, min_support = 0.55)
-            association_rules1 = create_rules(freq_items1, item_support_dict1, min_confidence = 0.9)
-
-            records2 = np.array(data2)
-            freq_items2, item_support_dict2 = aprioriFunc(records2, min_support = 0.55)
-            association_rules2 = create_rules(freq_items2, item_support_dict2, min_confidence = 0.9)
-
-            records3 = np.array(data3)
-            freq_items3, item_support_dict3 = aprioriFunc(records3, min_support = 0.55)
-            association_rules3 = create_rules(freq_items3, item_support_dict3, min_confidence = 0.9)
-    
-            records4 = np.array(data4)
-            freq_items4, item_support_dict4 = aprioriFunc(records4, min_support = 0.55)
-            association_rules4 = create_rules(freq_items4, item_support_dict4, min_confidence = 0.9)
+            
     
 
             class SetEncoder(json.JSONEncoder):
