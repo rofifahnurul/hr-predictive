@@ -201,7 +201,7 @@ def clusterProcess():
                     msg = "Table is empty"
                     return render_template('datapenilaian.html')
                 else:
-                    '''
+                    
                     conn = mysql.connection
                     cur = conn.cursor()     
                     cur.execute("SELECT * FROM penilaian")
@@ -214,16 +214,6 @@ def clusterProcess():
                     K=4
                     Centroids = data_numeric.sample(n=K)
                     tes = data_numeric.sample(n=K)
-                    
-                    '''
-                    path = "/Users/agussuyono/documents/hr-predictive/hasil-data-fix.csv"
-                    data = pd.read_csv(path)
-                    data_numeric = data.iloc[:,1:9]
-                    K=4
-                    path = "/Users/agussuyono/documents/hr-predictive/centroid.csv"
-                    Centroids = pd.read_csv(path)
-                    Centroids = data_numeric.sample(n=K)
-                    
                     columnC = Centroids.columns
 
                     diff = 1
@@ -251,33 +241,20 @@ def clusterProcess():
                             data_numeric[i]=ED
                             i=i+1
 
-                        C=[]
-                        
-                       
+                        C=[]                      
                         for index,row in data_numeric.iterrows():
                             min_dist=row[1]
                             pos=1
-                            for i in range(K-1):
-                                
-                                if row[i+2] < float(min_dist):
-    
+                            for i in range(K-1):                  
+                                if row[i+2] < float(min_dist):   
                                     min_dist = row[i+2]
                                     pos=i+2
-
                             C.append(pos)
-                            if flag == 0:
-                                cur = mysql.connection.cursor()
-                                cur.execute("INSERT datanums(cluster,satu,dua,tiga,empat) VALUES(%s,%s,%s,%s,%s)",(pos,row[1],row[2],row[3],row[4]))
-                                mysql.connection.commit()
+                            if flag == 0:                              
                                 print("Masuk",pos)
-                               
-                            #cur.execute("UPDATE penilaian SET cluster = %s",(pos))
-                            #mysql.connection.commit()
                             else:
-                                cur = mysql.connection.cursor()
-                                cur.execute("UPDATE datanums SET cluster = %s,satu= %s,dua=%s, tiga=%s,empat=%s",(pos,row[1],row[2],row[3],row[4]))
-                                mysql.connection.commit()
                                 print("update",pos,row[1],row[2],row[3],row[4])
+
                         flag+=1
                         data_numeric["cluster"]=C
                         data["cluster"] =C
@@ -297,55 +274,19 @@ def clusterProcess():
                             + (Centroids_new[column[5]] - Centroids[column[5]]).sum() 
                             + (Centroids_new[column[6]] - Centroids[column[6]]).sum() 
                             + (Centroids_new[column[7]] - Centroids[column[7]]).sum()
-                            print(diff.sum())
-                        
-                        
-        
+                            print(diff.sum())                             
                         Centroids = data_numeric.groupby(["cluster"]).mean()[[column[0],column[1],column[2],column[3],
                         column[4],column[5],column[6],column[7]]]
-
-                    '''
-                    cur = mysql.connection.cursor()
-
-                    #cur.execute("SELECT * FROM test")
-                    #id = cur.lastrowid
-                    x = len(Centroids)
-                    columnC = Centroids.columns
-                    i = 1
-                    for index1, row_c in Centroids.iterrows():
-                        
-                        kpi = row_c[columnC[0]].round(3)
-                      
-                        performance = row_c[columnC[1]].round(3)
-                        competency = row_c[columnC[2]].round(3)
-                        learning = row_c[columnC[3]].round(3)
-                        ki = row_c[columnC[4]].round(3)
-                        apresiasi = row_c[columnC[5]].round(3)
-                        lc = row_c[columnC[6]].round(3)
-                        ab = row_c[columnC[7]].round(3)
-                        cluster = i
-                        #cur = mysql.connection.cursor()
-                        #cur.execute("INSERT INTO centroid(kpi,performance,competency,learning,kerjaIbadah,apresiasi,lebihCepat,aktifBersama,cluster) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)",(kpi,performance,competency,learning,ki,apresiasi,lc,ab,cluster))
-                        #mysql.connection.commit()
-                        i+=1
                     
-                    column = data.columns
-                    for i in range(len(data)):
-                        id = data.loc[i, column[0]]
-                        cluster = data.loc[i, column[9]]
 
-                        #Clustering result is added to database           
+                    for index, row in data.iterrows():
+                        cluster = row['cluster']
+                        id = row['id']
+                        #Clustering result is added to database   
+                        cur = mysql.connection.cursor()        
                         cur.execute("UPDATE penilaian SET cluster = %s WHERE id = %s",(cluster,id))
                         mysql.connection.commit()
-                    '''
-                    #kpi = Centroids.get(column[0])
-                    class SetEncoder(json.JSONEncoder):
-                        def default(self, obj):
-                            if isinstance(obj, frozenset):
-                                return list(obj)
-                            return json.JSONEncoder.default(self, obj)
-                    return "success"
-                    #return str(data_numeric.columns)
+                    return redirect(url_for('clusteringResult'))
 
             else:
                 year = dataSelect
@@ -365,23 +306,19 @@ def clusterProcess():
 
                     cur = mysql.connection.cursor()
 
-                    #cur.execute("SELECT * FROM test")
-                    #id = cur.lastrowid
-                    column = data.columns
-                    for i in range(len(data)):
-                        id = data.loc[i, column[0]]
-                        cluster = data.loc[i, column[10]]
+                    for index, row in data.iterrows():
+                        cluster = row['cluster']
+                        id = row['id']
 
-                        #Clustering result is added to database           
+                        #Clustering result is added to database   
+                        cur = mysql.connection.cursor()        
                         cur.execute("UPDATE penilaian SET cluster = %s WHERE id = %s",(cluster,id))
                         mysql.connection.commit()
 
                     return redirect(url_for('clusteringResult'))
-
         return redirect(url_for('clusteringResult'))
     else:
         return redirect(url_for('login'))
-
 
 #Create route to clustering result to show clustering result from database
 @app.route("/clusteringResult", methods=['GET','POST'])
@@ -544,231 +481,6 @@ def viewPCA():
 def tes():
     return render_template("tes.html")
 
-'''
-#Create route to clustering result to show clustering result from database
-@app.route("/clusteringResult", methods=['GET','POST'])
-def clusteringResult():
-    if 'loggedin' in session:   
-        cur = mysql.connection.cursor()
-        result = cur.execute("SELECT * FROM penilaian")
-        userDetails = cur.fetchall()
-        conn = mysql.connection
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM penilaian")
-        columnNames  = cur.description
-        if not result:
-            msg = "Table is empty"
-            return render_template('clustering-result.html', userDetails=userDetails)
-        else:
-
-            #add to dataframe
-            df= [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
-            df= pd.DataFrame(df)
-            x = df.iloc[:,2:-1]
-            pca = PCA(n_components=3)
-            X_pca = pca.fit_transform(x)
-            var = pca.explained_variance_ratio_.cumsum()
-            fig1 = px.bar(range(1,len(var)+ 1), var,title='Cumulative explained variance')
-            graph1JSON = json.dumps(fig1, cls=plotly.utils.PlotlyJSONEncoder)
-         
-            return render_template('clustering-result.html', userDetails=userDetails,graph1JSON=graph1JSON)
-    else:
-        return redirect(url_for('login'))
-        
-
-@app.route('/clusteringProcess', methods=['GET','POST'])
-def clusteringProcess():
-    date = ""
-    if 'loggedin' in session:   
-        status = 0
-    
-        #collect data from uploaded file
-        if request.method == 'POST':
-            year = request.form['year']
-            conn = mysql.connection
-            cur = conn.cursor()
-            result = cur.execute("SELECT * FROM penilaian")
-            
-            cur.execute("SELECT * FROM penilaian WHERE tahun = ?",year)
-            columnNames  = cur.description
-
-          
-       
-
-       
-            #Clustering Process
-       
-            with open ('centroids.pkl','rb') as file:
-                centroid = pickle.load(file)
-
-            diff = 1
-            j=0
-            K=4
-
-            XD=data_numeric
-            i=1
-            for index1, row_c in centroid.iterrows():
-                ED=[]
-                for index2, row_d in XD.iterrows():
-                    d1 = (row_d["PK"]-row_c["PK"])**2
-                    d2 = (row_d["PERFORMANCE"]-row_c["PERFORMANCE"])**2
-                    d3 = (row_d["COMPETENCY"]-row_c["COMPETENCY"])**2
-                    d4 = (row_d["LEARNING POINT"]-row_c["LEARNING POINT"])**2
-                    d5 = (row_d["Kerja Ibadah"]-row_c["Kerja Ibadah"])**2
-                    d6 = (row_d["Apresiasi"]-row_c["Apresiasi"])**2
-                    d7 = (row_d["Lebih cepat"]-row_c["Lebih cepat"])**2
-                    d8 = (row_d["Aktif bersama"]-row_c["Aktif bersama"])**2
-                    d = np.sqrt(d1+d2+d3+d4+d5+d6+d7+d8)
-                    ED.append(d)
-                data_numeric[i]=ED
-                i=i+1
-
-            C=[]
-            for index,row in data_numeric.iterrows():
-                min_dist=row[1]
-                pos=1
-                for i in range(K):
-                    if row[i+1] < int(min_dist):
-                        min_dist = row[i+1]
-                        pos=i+1
-                C.append(pos)
-            data_numeric["Cluster"]=C
-            data["Cluster"] =C
-            cur = mysql.connection.cursor()
-            #cur.execute("SELECT * FROM test")
-            #id = cur.lastrowid
-            column = data.columns
-            for i in range(len(data)):
-                nik = data.loc[i, column[1]]
-                kpi = data.loc[i, column[2]]
-                performance = data.loc[i, column[3]]
-                competency = data.loc[i, column[4]]
-                learning = data.loc[i, column[5]]
-                ki = data.loc[i, column[6]]
-                apresiasi = data.loc[i, column[7]]
-                lc = data.loc[i, column[8]]
-                ab = data.loc[i, column[9]]
-                cluster = data.loc[i, column[10]]
-
-              
-                #Clustering result is added to database 
-          
-                cur.execute("INSERT INTO penilaian(tahun,nik,kpi,performance,competency,learning,kerjaIbadah,apresiasi,lebihCepat,aktifBersama,cluster) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",(year,nik,kpi,performance,competency,learning,ki,apresiasi,lc,ab,cluster))
-                mysql.connection.commit()
-
-           
-            return redirect(url_for('clusteringResult'))
-          
-        # return render_template("clustering.html", 
-        #column_names=data_numeric.columns.values, row_data=list(data_numeric.values.tolist()),zip = zip)
-        return render_template("clustering.html",menu="data",submenu="clustering",text="sukses",username=session['username'],date=date)
-     
-    else:
-        return redirect(url_for('login'))
-#Create route to clustering process (input data and process it to database)
-app.config['UPLOAD_FOLDER'] = '/Users/agussuyono/documents/hr-predictive/file'
-@app.route('/clustering', methods=['GET','POST'])
-def clustering():
-    date = ""
-    if 'loggedin' in session:   
-        status = 0
-    
-        #collect data from uploaded file
-        if request.method == 'POST':
-    
-            date = request.form['date']
-            date = date.split("/")
-            date = date[2].split(" ")
-
-            #get year using int(date[0])
-            year = int(date[0])
-            if request.files:
-                file = request.files["file"]
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'],file.filename))
-                msg="File already saved"
-                #get ext : file.filename.rsplit('.', 1)[1].lower()
-                status = 1
-                #return file.filename.rsplit('.', 1)[0]
-            
-        if status == 1:
-            read_file(file.filename)
-            path = "/Users/agussuyono/documents/hr-predictive/file/"+(file.filename)
-            data = pd.read_excel(path)
-            data_numeric = data.iloc[:,2:10]
-            #preprocess(file.filename)
-            #return redirect(request.url)
-
-
-            #Clustering Process
-       
-            with open ('centroids.pkl','rb') as file:
-                centroid = pickle.load(file)
-
-            diff = 1
-            j=0
-            K=4
-
-            XD=data_numeric
-            i=1
-            for index1, row_c in centroid.iterrows():
-                ED=[]
-                for index2, row_d in XD.iterrows():
-                    d1 = (row_d["PK"]-row_c["PK"])**2
-                    d2 = (row_d["PERFORMANCE"]-row_c["PERFORMANCE"])**2
-                    d3 = (row_d["COMPETENCY"]-row_c["COMPETENCY"])**2
-                    d4 = (row_d["LEARNING POINT"]-row_c["LEARNING POINT"])**2
-                    d5 = (row_d["Kerja Ibadah"]-row_c["Kerja Ibadah"])**2
-                    d6 = (row_d["Apresiasi"]-row_c["Apresiasi"])**2
-                    d7 = (row_d["Lebih cepat"]-row_c["Lebih cepat"])**2
-                    d8 = (row_d["Aktif bersama"]-row_c["Aktif bersama"])**2
-                    d = np.sqrt(d1+d2+d3+d4+d5+d6+d7+d8)
-                    ED.append(d)
-                data_numeric[i]=ED
-                i=i+1
-
-            C=[]
-            for index,row in data_numeric.iterrows():
-                min_dist=row[1]
-                pos=1
-                for i in range(K):
-                    if row[i+1] < int(min_dist):
-                        min_dist = row[i+1]
-                        pos=i+1
-                C.append(pos)
-            data_numeric["Cluster"]=C
-            data["Cluster"] =C
-            cur = mysql.connection.cursor()
-            #cur.execute("SELECT * FROM test")
-            #id = cur.lastrowid
-            column = data.columns
-            for i in range(len(data)):
-                nik = data.loc[i, column[1]]
-                kpi = data.loc[i, column[2]]
-                performance = data.loc[i, column[3]]
-                competency = data.loc[i, column[4]]
-                learning = data.loc[i, column[5]]
-                ki = data.loc[i, column[6]]
-                apresiasi = data.loc[i, column[7]]
-                lc = data.loc[i, column[8]]
-                ab = data.loc[i, column[9]]
-                cluster = data.loc[i, column[10]]
-
-              
-                Clustering result is added to database 
-             
-                cur.execute("INSERT INTO penilaian(tahun,nik,kpi,performance,competency,learning,kerjaIbadah,apresiasi,lebihCepat,aktifBersama,cluster) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",(year,nik,kpi,performance,competency,learning,ki,apresiasi,lc,ab,cluster))
-                mysql.connection.commit()
-
-           
-            return redirect(url_for('clusteringResult'))
-          
-        # return render_template("clustering.html", 
-        #column_names=data_numeric.columns.values, row_data=list(data_numeric.values.tolist()),zip = zip)
-        return render_template("clustering.html",menu="data",submenu="clustering",text="sukses",username=session['username'],date=date)
-     
-    else:
-        return redirect(url_for('login'))
-'''
 #route for create association from database
 @app.route("/asosiasiData")
 def asosiasiData():
