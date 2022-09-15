@@ -422,7 +422,7 @@ def associationProcess():
 
 
                     return redirect(url_for('associationResult'))
-                    #return render_template('asosiasiData.html',submenu=asosiasiData, details1=list(association_rules1),details2=list(association_rules2),details3=list(association_rules3),details4=list(association_rules4),username=session['username'])
+                    
                   
             else:
                 cluster = dataSelect
@@ -447,6 +447,21 @@ def associationProcess():
                     
                     return render_template('asosiasiData.html',submenu=asosiasiData, details1=list(association_rules),username=session['username'])           
         return render_template('asosiasiData.html',submenu=asosiasiData)
+    else:
+        return redirect(url_for('login'))
+@app.route("/associationResult")
+def associationResult():
+    if 'loggedin' in session: 
+        conn = mysql.connection
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM asosiasi")
+        details = cur.fetchall()
+        columnNames  = cur.description
+        if not details:
+            msg = "Table is empty"
+            return render_template('clustering-result.html')
+        else:
+            return render_template('associationResult.html',submenu=associationResult,details = details ,username=session['username'])
     else:
         return redirect(url_for('login'))
 
