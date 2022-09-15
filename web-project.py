@@ -36,20 +36,19 @@ app.config['SECRET_KEY'] = 'super secret key'
 
 mysql = MySQL(app)
 create_dash_application(app)
-def create_check(cluster,column_name,data):
-  result = []
-  for value in cluster[column_name]:
-    avg = cluster[column_name].mean()
-    if float(value) >= float(avg):
-      string = str(column_name)+">=" + str(cluster[column_name].mean())
-      result.append(string) 
-      
-    else:
-      string = str(column_name)+"<" + str(cluster[column_name].mean())
-      result.append(string)
-  column_new = str(column_name) + "_check"
-  cluster[column_new] = result 
-  data[column_new]=result
+
+
+def insertSQLRules(associationRules,cluster,minSupp, minConf,tahun):
+    for row in associationRules:
+        left = row[0]
+        right = row[1]
+        support = row[5]
+        confidence = row[2]
+        lift = row[3]
+        conviction = row[4] 
+        cur = mysql.connection.cursor()
+        cur.execute("INSERT INTO asosiasi(leftHand,rightHand,support,confidence,lift,conviction,minSupp,minConf,cluster,tahun) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",(left,right,support,confidence,lift,conviction,minSupp,minConf,cluster,tahun))
+        mysql.connection.commit()
 
 @app.route('/register', methods =['GET', 'POST'])
 def register():
@@ -386,48 +385,44 @@ def associationProcess():
                     for i in range (2,10):
                         create_check(cluster4,column[i],data4)
 
-            
-                    records1 = np.array(data1)
-                    freq_items1, item_support_dict1 = aprioriFunc(records1, min_support = 0.55)
-                    association_rules1 = create_rules(freq_items1, item_support_dict1, min_confidence = 0.9)
+                    status = 0
+                    min_support = 0.55
+                    min_confidence = 0.9
 
-                    records2 = np.array(data2)
-                    freq_items2, item_support_dict2 = aprioriFunc(records2, min_support = 0.55)
-                    association_rules2 = create_rules(freq_items2, item_support_dict2, min_confidence = 0.9)
-
-                    records3 = np.array(data3)
-                    freq_items3, item_support_dict3 = aprioriFunc(records3, min_support = 0.55)
-                    association_rules3 = create_rules(freq_items3, item_support_dict3, min_confidence = 0.9)
-    
-                    records4 = np.array(data4)
-                    freq_items4, item_support_dict4 = aprioriFunc(records4, min_support = 0.55)
-                    association_rules4 = create_rules(freq_items4, item_support_dict4, min_confidence = 0.9)
-    
-                    '''
-                    data1 = processData(data, 1, column)
-                    data2 = processData(data, 2, column)
-                    data3 = processData(data, 3, column)
-                    data4 = processData(data, 4, column)
-
-                    len_rights = []
-                    association_rules1 = generateRules(data1)
-                    #len_rights.append(len_right)
-                    association_rules2 = generateRules(data2)
-                    #len_rights.append(len_right)
-                    association_rules3= generateRules(data3)
-                    #len_rights.append(len_right)
-                    association_rules4 = generateRules(data4)
-                    #len_rights.append(len_right)
+                    association_rules1,freq_item_support1 = generateRules(data1,min_support,min_confidence)    
+                    association_rules2,freq_item_support1 = generateRules(data2,min_support,min_confidence)    
+                    association_rules3,freq_item_support1= generateRules(data3,min_support,min_confidence)             
+                    association_rules4,freq_item_support1 = generateRules(data4,min_support,min_confidence)
+                    tahun = data['tahun']
+                    tahun = tahun[0]
+                  
+                    if len(association_rules1)>5:
+                        association_rules1,min_support_new,min_confidence_new = checkRules(association_rules1,data1,min_support,min_confidence)
+                        insertSQLRules(association_rules1, 1, min_support_new,min_confidence_new,tahun)  
+                    else:
+                        insertSQLRules(association_rules1, 1, min_support,min_confidence,tahun)
                     
-'''
+                    if len(association_rules2)>5:
+                        association_rules2,min_support_new,min_confidence_new = checkRules(association_rules2,data2,min_support,min_confidence)
+                        insertSQLRules(association_rules2, 2, min_support_new,min_confidence_new,tahun)  
+                    else:
+                        insertSQLRules(association_rules2, 2, min_support,min_confidence,tahun)
                     
-                    class SetEncoder(json.JSONEncoder):
-                        def default(self, obj):
-                            if isinstance(obj, frozenset):
-                                return list(obj)
-                            return json.JSONEncoder.default(self, obj)
-                    #return len_rights
-                    return render_template('asosiasiData.html',submenu=asosiasiData, details1=list(association_rules1),details2=list(association_rules2),details3=list(association_rules3),details4=list(association_rules4),username=session['username'])
+                    if len(association_rules3)>5:
+                        association_rules3,min_support_new,min_confidence_new = checkRules(association_rules3,data3,min_support,min_confidence)
+                        insertSQLRules(association_rules3, 3, min_support_new,min_confidence_new,tahun)  
+                    else:
+                        insertSQLRules(association_rules3, 3, min_support,min_confidence,tahun)
+
+                    if len(association_rules4)>5:
+                        association_rules4,min_support_new,min_confidence_new = checkRules(association_rules4,data4,min_support,min_confidence)
+                        insertSQLRules(association_rules4, 4, min_support_new,min_confidence_new,tahun)  
+                    else:
+                        insertSQLRules(association_rules1, 4, min_support,min_confidence,tahun)
+
+
+                    return redirect(url_for('associationResult'))
+                    #return render_template('asosiasiData.html',submenu=asosiasiData, details1=list(association_rules1),details2=list(association_rules2),details3=list(association_rules3),details4=list(association_rules4),username=session['username'])
                   
             else:
                 cluster = dataSelect
