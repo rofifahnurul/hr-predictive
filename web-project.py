@@ -37,8 +37,38 @@ app.config['SECRET_KEY'] = 'super secret key'
 mysql = MySQL(app)
 create_dash_application(app)
 
-
+def insertItem(cluster,tahun):
+    conn = mysql.connection
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM asosiasi WHERE cluster = %s" ,cluster)
+    details = cur.fetchall()
+    columnNames  = cur.description
+    data = pd.DataFrame(details,columns =['id','leftHand','rightHand','support','confidence','lift','conviction','minSupp','minConf','cluster','tahun'])
+    listCol = []
+    colNames = ["kpi","performance","learning","competency","learning","kerjaIbadah","apresiasi","lebihCepat","aktifBersama"]
+    for column in colNames:
+        
+        for i in data['leftHand']:
+            if column in i:
+                listCol.append(column)
+                print("left hand", i, column)
+        for i in data['rightHand']:
+            if column in i:
+                if column in listCol:
+                    pass
+                else:
+                    listCol.append(column)
+                    print("right hand", i, column)
+                    
+    for i in listCol:
+        print(i)
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('INSERT INTO itemAssociation(item, cluster, tahun) VALUES (%s, %s, %s)', (i, cluster, tahun))
+        mysql.connection.commit()
+    
 def insertSQLRules(associationRules,cluster,minSupp, minConf,tahun):
+    listCol = []
+    colNames = ["kpi","performance","learning","competency","learning","kerjaIbadah","apresiasi","lebihCepat","aktifBersama"]
     for row in associationRules:
         left = row[0]
         right = row[1]
@@ -49,6 +79,8 @@ def insertSQLRules(associationRules,cluster,minSupp, minConf,tahun):
         cur = mysql.connection.cursor()
         cur.execute("INSERT INTO asosiasi(leftHand,rightHand,support,confidence,lift,conviction,minSupp,minConf,cluster,tahun) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",(left,right,support,confidence,lift,conviction,minSupp,minConf,cluster,tahun))
         mysql.connection.commit()
+    
+        
 
 @app.route('/register', methods =['GET', 'POST'])
 def register():
@@ -330,12 +362,13 @@ def clusteringResult():
         cur = conn.cursor()
         cur.execute("SELECT * FROM penilaian")
         columnNames  = cur.description
+        count = donutCluster()
         if not result:
             msg = "Table is empty"
-            return render_template('clustering-result.html', userDetails=userDetails)
+            return render_template('clustering-result.html', userDetails=userDetails,count = count)
         else:
       
-            return render_template('clustering-result.html', userDetails=userDetails)
+            return render_template('clustering-result.html', userDetails=userDetails,count=count)
     else:
         return redirect(url_for('login'))
 
@@ -420,7 +453,10 @@ def associationProcess():
                     else:
                         insertSQLRules(association_rules1, 4, min_support,min_confidence,tahun)
 
-
+                    insertItem(1,tahun)
+                    insertItem(2,tahun)
+                    insertItem(3,tahun)
+                    insertItem(4,tahun)
                     return redirect(url_for('associationResult'))
                     
                   
@@ -449,6 +485,9 @@ def associationProcess():
         return render_template('asosiasiData.html',submenu=asosiasiData)
     else:
         return redirect(url_for('login'))
+
+
+
 @app.route("/associationResult")
 def associationResult():
     if 'loggedin' in session: 
@@ -461,9 +500,39 @@ def associationResult():
             msg = "Table is empty"
             return render_template('clustering-result.html')
         else:
-            return render_template('associationResult.html',submenu=associationResult,details = details ,username=session['username'])
+            data = pd.DataFrame(details,columns =['id','leftHand','rightHand','support','confidence','lift','conviction','minSupp','minConf','cluster','tahun'])
+            
+            cluster1 = data[data['cluster'] == 1]
+            cluster2 =data[data['cluster'] == 2]
+            cluster3 = data[data['cluster'] == 3]
+            cluster4 = data[data['cluster'] == 4]
+
+            count = [len(cluster1),len(cluster2),len(cluster3),len(cluster4)]
+
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM itemAssociation")
+            items = cur.fetchall()
+            dataItem = pd.DataFrame(items,columns =['id','item','cluster','tahun'])
+
+            listItem1 = []
+            listItem2 = []
+            listItem3 = []
+            listItem4 = []
+            for index,row in dataItem.iterrows():
+                if row['cluster'] == 1:
+                    listItem1.append(row)
+                if row['cluster'] == 2:
+                    listItem2.append(row)
+                if row['cluster'] == 3:
+                    listItem3.append(row)
+                if row['cluster'] == 4:
+                    listItem4.append(row)
+            print(items)
+            #return "succces"
+            return render_template('associationResult.html',submenu=associationResult,details = details, count = count,listItem1 = listItem1,listItem2 = listItem2, listItem3 = listItem3, listItem4 = listItem4, username=session['username'])
     else:
         return redirect(url_for('login'))
+
 
 @app.route("/viewPCA")
 def viewPCA():  
@@ -487,114 +556,37 @@ def viewPCA():
     json_list= json.dumps(parsed, indent=4)  
     return json_list
 
+#@app.route("/donutCluster")
+def donutCluster():  
+    conn = mysql.connection
+    cur = conn.cursor()   
+    cur.execute("SELECT * FROM penilaian")
+    columnNames  = cur.description
+    dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
+    data = pd.DataFrame(dataResult)
+
+    cluster1 = pd.DataFrame(data.loc[data['cluster'] == 1])
+    cluster2 = pd.DataFrame(data.loc[data['cluster'] == 2])
+    cluster3 = pd.DataFrame(data.loc[data['cluster'] == 3])
+    cluster4 = pd.DataFrame(data.loc[data['cluster'] == 4])
+    
+    #counts = {'cluster':[len(cluster1),len(cluster2),len(cluster3),len(cluster4)]}
+    count = [len(cluster1),len(cluster2),len(cluster3),len(cluster4)]
+    
+    class SetEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, frozenset):
+                return list(obj)
+            return json.JSONEncoder.default(self, obj)
+    #json_list = json.loads(json.dumps(list(xPCA.T.to_dict().values())))
+    #result = df.to_json(orient="records")
+    #parsed = json.loads(result)
+    #counts= json.dumps(parsed, indent=4)  
+    
+    return count
 @app.route("/tes")
 def tes():
     return render_template("tes.html")
-
-#route for create association from database
-@app.route("/asosiasiData")
-def asosiasiData():
-    if 'loggedin' in session: 
-        #make connection and sql query
-        conn = mysql.connection
-        cur = conn.cursor()
-        result = cur.execute("SELECT * FROM penilaian")
-        cur.execute("SELECT * FROM penilaian")
-        columnNames  = cur.description
-
-        if not result:
-            msg = "Table is empty"
-            return render_template('asosiasiData.html')
-
-        else:
-            #add to dataframe
-            dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
-            data = pd.DataFrame(dataResult)
-            column = data.columns
-
-            #select data
-            cluster1 = data.loc[data['cluster'] == 1]
-            cluster2 = data.loc[data['cluster'] == 2]
-            cluster3 = data.loc[data['cluster'] == 3]
-            cluster4 = data.loc[data['cluster'] == 4]
-
-            #prepare to make a new dataframe (make categorical value for each cluster)
-            data1 = pd.DataFrame()
-            for i in range (2,10):
-                create_check(cluster1,column[i],data1)
-    
-            data2 = pd.DataFrame()
-            for i in range (2,10):
-                create_check(cluster2,column[i],data2)
-
-            data3 = pd.DataFrame()
-            for i in range (2,10):
-                create_check(cluster3,column[i],data3)
-    
-            data4 = pd.DataFrame()
-            for i in range (2,10):
-                create_check(cluster4,column[i],data4)
-
-            '''
-            Make association rules for each cluster
-    
-            '''
-            #for i in range(0, len(data3)):
-            #    records3.append([str(data3.values[i,j]) for j in range(0, 8)])
-            #associationRules_3 = apriori(records3, min_support=0.55, min_confidence=0.9, min_length = 2)
-            #associationResults_3 = list(associationRules_3)
-
-            
-    
-
-            class SetEncoder(json.JSONEncoder):
-                def default(self, obj):
-                    if isinstance(obj, frozenset):
-                        return list(obj)
-                    return json.JSONEncoder.default(self, obj)
-            #data = json.dumps(list(data_result), cls=SetEncoder)
-            #return "aturan asosiasi", json.dumps(list(association_rules3['0']), cls=SetEncoder)
-            #return "aturan asosiasi" + str(list(association_rules3[0][0]))
-            return render_template('asosiasiData.html',submenu=asosiasiData, details1=list(association_rules1),details2=list(association_rules2),details3=list(association_rules3),details4=list(association_rules4),username=session['username'])
-    else:
-        return redirect(url_for('login'))
-
-
-@app.route("/asosiasi",methods=['GET','POST'])
-def asosiasi():
-    if 'loggedin' in session: 
-        status = 0
-        if request.method == 'POST':
-            if request.files:
-                file = request.files["file"]
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'],file.filename))
-                print("Asosiasi saved")
-                #get ext : file.filename.rsplit('.', 1)[1].lower()
-                status = 1
-        if status == 1:
-            #read_file(file.filename)
-            path = "/Users/agussuyono/documents/project-skripsi/file/"+(file.filename)
-            #data = pd.read_excel(path)
-            data = pd.read_csv(path)
-            records = []
-            for i in range(0, 601):
-                records.append([str(data.values[i,j]) for j in range(0, 9)])
-
-            association_rules = apriori(records, min_support=0.4, min_confidence=0.9)
-            association_results = list(association_rules)
-        
-            class SetEncoder(json.JSONEncoder):
-                def default(self, obj):
-                    if isinstance(obj, frozenset):
-                        return list(obj)
-
-                    return json.JSONEncoder.default(self, obj)
-        
-        
-            return json.dumps(association_results, cls=SetEncoder)
-        return render_template("asosiasi.html", menu="data",submenu="asosiasi",username=session['username'])
-    else:
-        return redirect(url_for('login'))
 
 @app.route('/insert', methods = ['POST'])
 def insert():
