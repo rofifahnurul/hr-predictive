@@ -1,33 +1,101 @@
 {%include 'header.html'%}
-
+<script src='https://cdn.plot.ly/plotly-2.14.0.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js'></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <!-- Content Wrapper. Contains page content -->
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
-    <div class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1 class="m-0">Clustering Result {{date}}</h1>
+
+<body>
+    <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0">Clustering Result {{date}}</h1>
+                    </div>
+
                 </div>
-
+                <!-- /.row -->
             </div>
-            <!-- /.row -->
+            <!-- /.container-fluid -->
         </div>
-        <!-- /.container-fluid -->
-    </div>
-    <!-- /.content-header -->
-    <!-- Main content -->
-    <section class="content">
-        <div id="clusteringResult"></div>
-        <div class="card">
-            <div class="card-header">
-              <h3 class="card-title">Data with clustering result</h3>
+        <!-- /.content-header -->
+        <!-- Main content -->
+        <section class="content">
+            
+            <div id="cluster1">{{count[0]}}</div>
+            <div id="cluster2">{{count[1]}}</div>
+            <div id="cluster3">{{count[2]}}</div>
+            <div id="cluster4">{{count[3]}}</div>
+            <div id="clusteringResult">
+
             </div>
-        <!-- /.card-header -->
+
+            <div id='myDiv'>
+                <!-- Plotly chart will be drawn inside this DIV -->
+            </div>
+            <div id='donutCluster'>
+                <!-- Plotly chart will be drawn inside this DIV -->
+            </div>
+            
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-warning  pull-right" data-toggle="modal" data-target="#asosiasi">Asosiasi Data</button>
+            </div>
+
+            <div id="asosiasi" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <form action="{{ url_for('associationProcess') }}" method="POST" class="form-horizontal">
+                                <div class='card-body'>
+                                    <div class="card card-info">
+                                        <div class="card-header">
+                                            <h3 class="card-title">Asosiasi</h3>
+                                        </div>
+                                        <!-- Date -->
+                                        <div class="row">
+                                            <div class="m-4">
+                                                <!-- select -->
+                                                <div class="form-group">
+                                                    <label>Cluster yang ingin diasosiasikan</label>
+                                                    <select class="custom-select" name="dataSelect">
+                                                  <option>Semua cluster</option>
+                                                  <option>1</option>
+                                                  <option>2</option>
+                                                  <option>3</option>
+                                                  <option>4</option>                    
+                                                </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group m-4">
+                                            <button class="btn btn-primary" type="submit">Asosiasi Data</button>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </form>
+
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Data with clustering result</h3>
+                </div>
+                <!-- /.card-header -->
 
 
-            <div class="card-body p-0">
-                 <!--
+                <div class="card-body p-0">
+                    <!--
                 <div class="row">
                     <div class="col-sm-12 col-md-6">
                         <div class="dt-buttons btn-group flex-wrap">
@@ -38,51 +106,52 @@
                     </div>
                 </div>
                 -->
-            <table class="table table-sm" class="table table-bordered table-striped ">
-                <thead>
-                    <tr>
-                        <th style="width: 10px">No.</th>
-                        <th>NIK</th>
-                        <th>KPI</th>
-                        <th>Performance</th>
-                        <th>Competency</th>
-                        <th>Learning Point</th>
-                        <th>Kerja Ibadah</th>
-                        <th>Apresiasi</th>
-                        <th>Lebih Cepat</th>
-                        <th>Aktif Bersama</th>
-                        <th>Cluster</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user in userDetails %}
-                    <tr>
+                    <table class="table table-sm" class="table table-bordered table-striped ">
+                        <thead>
+                            <tr>
+                                <th style="width: 10px">No.</th>
+                                <th>NIK</th>
+                                <th>KPI</th>
+                                <th>Performance</th>
+                                <th>Competency</th>
+                                <th>Learning Point</th>
+                                <th>Kerja Ibadah</th>
+                                <th>Apresiasi</th>
+                                <th>Lebih Cepat</th>
+                                <th>Aktif Bersama</th>
+                                <th>Cluster</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in userDetails %}
+                            <tr>
 
-                        <td>{{loop.index}}</td>
-                        <td>{{ user[1]}}</td>
-                        <td>{{ user[2]}}</td>
-                        <td>{{ user[3]}}</td>
-                        <td>{{ user[4]}}</td>
-                        <td>{{ user[5]}}</td>
-                        <td>{{ user[6]}}</td>
-                        <td>{{ user[7]}}</td>
-                        <td>{{ user[8]}}</td>
-                        <td>{{ user[9]}}</td>
-                        <td>{{ user[10]}}</td>
-                    </tr>
+                                <td>{{loop.index}}</td>
+                                <td>{{ user[1]}}</td>
+                                <td>{{ user[2]}}</td>
+                                <td>{{ user[3]}}</td>
+                                <td>{{ user[4]}}</td>
+                                <td>{{ user[5]}}</td>
+                                <td>{{ user[6]}}</td>
+                                <td>{{ user[7]}}</td>
+                                <td>{{ user[8]}}</td>
+                                <td>{{ user[9]}}</td>
+                                <td>{{ user[10]}}</td>
+                            </tr>
 
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        <!-- /.card-body -->
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <!-- /.card-body -->
 
-</div>
-<!-- /.card -->
-</div>
-</section>
-<!-- /.content -->
-</div>
+            </div>
+            <!-- /.card -->
+    </div>
+    </section>
+    <!-- /.content -->
+    </div>
+</body>
 <!-- DataTables  & Plugins -->
 <script src="../static/plugins/datatables/jquery.dataTables.min.js"></script>
 <script src="../static/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
@@ -98,29 +167,87 @@
 <script src="../.static/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script>
-    $(function () {
-      $("#example1").DataTable({
-        "responsive": true, "lengthChange": false, "autoWidth": false,
-        "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
-      }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
-      $('#example2').DataTable({
-        "paging": true,
-        "lengthChange": false,
-        "searching": false,
-        "ordering": true,
-        "info": true,
-        "autoWidth": false,
-        "responsive": true,
-      });
+    d3.json("{{ url_for('viewPCA') }}", function(err, rows) {
+        function unpack(rows, key) {
+            return rows.map(function(row) {
+                return row[key];
+            });
+        }
+        data = [];
+
+        const conditions = [1, 2, 3, 4]
+
+
+        var trace1 = {
+            x: unpack(rows, 'pc1'),
+            y: unpack(rows, 'pc2'),
+            z: unpack(rows, 'pc3'),
+
+            mode: 'markers',
+            marker: {
+                size: 12,
+                color: unpack(rows, 'y'),
+                colorscale: 'viridis',
+                width: 0.5,
+                opacity: 0.8
+            },
+            type: 'scatter3d'
+        };
+
+
+        var data = [trace1];
+        var layout = {
+            margin: {
+                l: 0,
+                r: 0,
+                b: 0,
+                t: 0
+            }
+        };
+        Plotly.newPlot('myDiv', data, layout);
     });
-  </script>
-<script type="text/javascript">
-    var graphs1 = {
-        {
-            graph1JSON | safe
+</script>
+<script>
+    window.onload = function() {
+    var dataset = {{ count | tojson }};
+    var data = [{
+        values: [dataset[0],dataset[1],dataset[2],dataset[3]],
+        labels: [1,2,3,4],
+        domain: {
+            column: 0
+        },
+        name: 'Count',
+        
+        hoverinfo: 'label+percent+name+values',
+        hole: .4,
+        type: 'pie'
+    }];
+    console.log(cluster1)
+    
+    console.log(dataset[0],dataset[1],dataset[2],dataset[3] )
+    var layout = {
+        title: 'Count of Each Cluster',
+        annotations: [{
+            font: {
+                size: 20
+            },
+            showarrow: false,
+            text: 'Count',
+            x: 0.17,
+            y: 0.5
+        }],
+        height: 400,
+        width: 600,
+        showlegend: true,
+        grid: {
+            rows: 1,
+            columns: 2
         }
     };
-    Plotly.plot("clusteringResult", graphs1, {});
+
+    Plotly.newPlot('donutCluster', data, layout);
+    }
 </script>
+
 <!-- /.content-wrapper -->
 {% include 'footer.html'%}
