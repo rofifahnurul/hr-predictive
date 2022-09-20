@@ -16,7 +16,7 @@ from aprioriScratch import *
 from kmeansScratch import *
 import plotly
 import plotly.express as px
-from dash_app import create_dash_application
+
 from sklearn.decomposition import PCA 
 
 UPLOAD_FOLDER = '/file'
@@ -35,7 +35,7 @@ app.config['SESSION_TYPE'] = 'memcached'
 app.config['SECRET_KEY'] = 'super secret key'
 
 mysql = MySQL(app)
-create_dash_application(app)
+
 
 def insertItem(cluster,tahun):
     conn = mysql.connection
@@ -431,12 +431,13 @@ def clusteringResult():
         cur.execute("SELECT * FROM penilaian")
         columnNames  = cur.description
         count = donutCluster()
+        meanList = linechart()
         if not result:
             msg = "Table is empty"
-            return render_template('clustering-result.html', userDetails=userDetails,count = count)
+            return render_template('clustering-result.html', userDetails=userDetails,count = count, meanList=meanList)
         else:
       
-            return render_template('clustering-result.html', userDetails=userDetails,count=count)
+            return render_template('clustering-result.html', userDetails=userDetails,count=count,meanList=meanList)
     else:
         return redirect(url_for('login'))
 
@@ -624,7 +625,7 @@ def viewPCA():
     json_list= json.dumps(parsed, indent=4)  
     return json_list
 
-#@app.route("/donutCluster")
+@app.route("/donutCluster")
 def donutCluster():  
     conn = mysql.connection
     cur = conn.cursor()   
@@ -646,15 +647,52 @@ def donutCluster():
             if isinstance(obj, frozenset):
                 return list(obj)
             return json.JSONEncoder.default(self, obj)
-    #json_list = json.loads(json.dumps(list(xPCA.T.to_dict().values())))
-    #result = df.to_json(orient="records")
-    #parsed = json.loads(result)
-    #counts= json.dumps(parsed, indent=4)  
-    
     return count
-@app.route("/tes")
-def tes():
-    return render_template("tes.html")
+
+@app.route("/linechart")
+def linechart():   
+    if 'loggedin' in session: 
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT id, tahun, cluster, nik, kpiNorm, performanceNorm, competencyNorm, learningNorm, kerjaIbadahNorm, apresiasiNorm, lebihCepatNorm, aktifBersamaNorm FROM penilaian")
+        columnNames  = cur.description
+        dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
+        data = pd.DataFrame(dataResult)
+
+        cluster1 = pd.DataFrame(data.loc[data['cluster'] == 1])
+        cluster2 = pd.DataFrame(data.loc[data['cluster'] == 2])
+        cluster3 = pd.DataFrame(data.loc[data['cluster'] == 3])
+        cluster4 = pd.DataFrame(data.loc[data['cluster'] == 4])
+    
+        mean1 = cluster1.describe().loc['mean']
+        mean2 = cluster1.describe().loc['mean']
+        mean3 = cluster1.describe().loc['mean']
+        mean4 = cluster1.describe().loc['mean']
+
+        meanList=[]
+        flag=3
+        for i in range(8):        
+            meanList.append(mean1.values[flag])
+            flag+=1
+        
+        flag=3
+        for i in range(8):        
+            meanList.append(mean2[flag])
+            flag+=1
+
+        flag=3
+        for i in range(8):        
+            meanList.append(mean3[flag])
+            flag+=1
+        flag=3
+        for i in range(8):        
+            meanList.append(mean4[flag])
+            flag+=1
+
+        #return mean1,mean2,mean3,mean4
+        return meanList
+    else:
+        return redirect(url_for('login'))
+
 
 @app.route('/insert', methods = ['POST'])
 def insert():
