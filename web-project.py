@@ -183,19 +183,22 @@ def uploadFile():
             #get year using int(date[0])
             year = int(date[0])
             if request.files:
-                file = request.files["file"]
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'],file.filename))
+                file = request.files["file"]           
                 msg="File already saved"
-                #get ext : file.filename.rsplit('.', 1)[1].lower()
-                status = 1
+                ext = file.filename.rsplit('.', 1)[1].lower()
+                acceptedExt = ['csv','xls','xlsx']
+                if ext in acceptedExt:
+                    file.save(os.path.join(app.config['UPLOAD_FOLDER'],file.filename))
+                    status = 1
                 #return file.filename.rsplit('.', 1)[0]
             
         if status == 1:
-            
             path = "/Users/agussuyono/documents/hr-predictive/file/"+(file.filename)
-            #data = pd.read_excel(path)
-            data = pd.read_csv(path)
-
+            if ext == "csv":
+                data = pd.read_csv(path)
+            else:
+                data = pd.read_excel(path)
+            
             column = data.columns
             for i in range(len(data)):
                 nik = data.loc[i, column[0]]
@@ -216,8 +219,74 @@ def uploadFile():
         return redirect(url_for('datapenilaian'))
     else:
         return redirect(url_for('login'))
+@app.route("/normalisasi", methods=['GET','POST'])
+def normalisasi():
+    if 'loggedin' in session:
+        dataSelect = request.form['dataSelect']
+        if request.method == 'POST':
+            conn = mysql.connection
+            cur = conn.cursor() 
+            if dataSelect == "Semua data":
+                result = cur.execute("SELECT id, nik, kpi, performance, competency, learning, kerjaIbadah, apresiasi, lebihCepat, aktifBersama FROM penilaian")
+                if not result:
+                    msg = "Table is empty"
+                    return render_template('datapenilaian.html')
+                else:
+                    columnNames  = cur.description
+                    dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
+                    dataResult = pd.DataFrame(dataResult)
+
+                    data_numeric = dataResult.iloc[:,:10]
+                    
+                    array = data_numeric.values
+                    X = array[:,2:10]
+            
+                    min_max_scaler = preprocessing.MinMaxScaler(feature_range=(0,1)) #inisialisasi normalisasi MinMax
+                    data = min_max_scaler.fit_transform(X) #transformasi MinMax untuk fitur
+                    df = pd.DataFrame({'id':array[:,0],'kpi':data[:,0],'performance':data[:,1],'competency':data[:,2],'learning':data[:,3],'kerjaIbadah':data[:,4],'apresiasi':data[:,5],'lebihCepat':data[:,6],'aktifBersama':data[:,7]})
+                    for index,row in df.iterrows():                      
+                        id = int(row['id'])
+                        kpiNorm = row['kpi']
+                        print("kpiNorm",kpiNorm)
+                        performanceNorm = row['performance']
+                        competencyNorm = row['competency']
+                        learningNorm = row['learning']
+                        kerjaIbadahNorm = row['kerjaIbadah']
+                        apresiasiNorm = row['apresiasi']
+                        lebihCepatNorm = row['lebihCepat']
+                        aktifBersamaNorm = row['aktifBersama']
+                        cur = mysql.connection.cursor()  
+                        cur.execute("UPDATE penilaian SET kpiNorm = %s, performanceNorm = %s, competencyNorm = %s, learningNorm = %s, kerjaIbadahNorm = %s, apresiasiNorm = %s, lebihCepatNorm = %s, aktifBersamaNorm = %s WHERE id = %s",(kpiNorm, performanceNorm, competencyNorm, learningNorm, kerjaIbadahNorm, apresiasiNorm, lebihCepatNorm, aktifBersamaNorm,id))
+                        mysql.connection.commit()
+                    return redirect(url_for('normalisasiResult'))
+
+            return redirect(url_for('datapenilaian')) 
+
+        return redirect(url_for('datapenilaian'))
+    else:
+        return redirect(url_for('login'))
 
 #Create route to data penilaian to show employee name 
+@app.route("/normalisasiResult", methods=['GET','POST'])
+def normalisasiResult():
+    if 'loggedin' in session: 
+        cur = mysql.connection.cursor()
+        result = cur.execute("SELECT id, tahun, nik, kpiNorm, performanceNorm, competencyNorm, learningNorm, kerjaIbadahNorm, apresiasiNorm, lebihCepatNorm, aktifBersamaNorm FROM penilaian")
+        details = cur.fetchall()
+        
+        conn = mysql.connection
+        cur = conn.cursor()
+        if not result:
+            msg = "Table is empty"
+            return render_template('normalisasiResult.html', details=details)
+        else:
+            return render_template('normalisasiResult.html', details=details)
+        
+    else:
+        return redirect(url_for('login'))
+
+
+#Create route to clusterprocess to process clustering
 @app.route("/clusterProcess", methods=['GET','POST'])
 def clusterProcess():
     if 'loggedin' in session: 
@@ -231,8 +300,7 @@ def clusterProcess():
                 if not result:
                     msg = "Table is empty"
                     return render_template('datapenilaian.html')
-                else:
-                    
+                else:                  
                     conn = mysql.connection
                     cur = conn.cursor()     
                     cur.execute("SELECT * FROM penilaian")

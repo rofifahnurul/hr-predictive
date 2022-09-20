@@ -20,3 +20,16 @@ CREATE TABLE accounts(
     -> password varchar(255) NOT NULL,
     -> PRIMARY KEY (id)
     -> );
+
+CREATE TABLE centroid(
+    -> id INT NOT NULL AUTO_INCREMENT,
+    -> kpi FLOAT NULL,
+    -> performance FLOAT NULL,
+    -> competency FLOAT NULL,
+    -> learning FLOAT NULL,
+    -> kerjaIbadah FLOAT NULL,
+    -> apresiasi FLOAT NULL,
+    -> lebihCepat FLOAT NULL,
+    -> aktifBersama FLOAT NULL,
+    -> cluster INT NULL,
+    -> primary key (id));

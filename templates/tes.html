@@ -1,9 +1,27 @@
-<html>
-   <body>
-      <form action = "http://localhost:5000/uploader" method = "POST" 
-         enctype = "multipart/form-data">
-         <input type = "file" name = "file" />
-         <input type = "submit"/>
-      </form>
-   </body>
-</html>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.css">
+<table id="table_id" class="display">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Age</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>James</td>
+            <td>24</td>
+        </tr>
+        <tr>
+            <td>Raj</td>
+            <td>25</td>
+        </tr>
+    </tbody>
+</table>
+
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.js"></script>
+<script>$(document)
+    .ready(function () {
+      $('#table_id')
+        .DataTable();
+    });
+    </script>
