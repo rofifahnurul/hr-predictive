@@ -16,9 +16,7 @@
     </div>
     <!-- /.content-header -->
 
-
     <!-- Main content -->
-
     <section class="content">
         <!-- Modal -->
         <div id="variabel1" class="modal fade" role="dialog">
@@ -44,6 +42,7 @@
             </div>
         </div>
         <!-- End Modal-->
+
         <!-- Modal -->
         <div id="variabel2" class="modal fade" role="dialog">
             <div class="modal-dialog">
@@ -89,6 +88,7 @@
             </div>
         </div>
         <!-- End Modal-->
+
         <!-- Modal -->
         <div id="variabel4" class="modal fade" role="dialog">
             <div class="modal-dialog">
@@ -110,6 +110,7 @@
             </div>
         </div>
         <!-- End Modal-->
+
         <div class="container-fluid">
             <h5 class="mb-2 mt-4">Small Box</h5>
             <div class="row">
@@ -152,19 +153,15 @@
             </div>
           <!-- ./col -->
           {%endfor%}
-          
-       
-            <div class="card-header">
-                <h3 class="card-title">Cluster </h3>
-            </div>
-            <!-- /.card-header -->
-
-
-            <div class="card-body p-0">
-                <table class="table table-sm">
+            <div class="card card-dark">
+                <div class="card-header">
+                    <h3 class="card-title">Cluster </h3>
+                </div>
+                <!-- /.card-header -->
+                <div class="card-body p-0">
+                    <table id="association"class="table table-striped table-hover">
                     <thead>
                         <tr>
-
                             <th style="width: 10px">No.</th>
                             <th>Jika item ini muncul</th>
                             <th>=></th>
@@ -193,13 +190,57 @@
 
                         {% endfor %}
                     </tbody>
-                </table>
+                    </table>
+                </div>
+                <!-- /.card-body -->
             </div>
-            <!-- /.card-body -->
-
-        </div>
+            </div>
     </section>
 
 </div>
 <!-- /.content-wrapper -->
+<!-- DataTables  & Plugins -->
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/1.3.1/js/dataTables.buttons.min.js"></script> 
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/1.3.1/js/buttons.html5.min.js"></script>
+<!-- /.content-wrapper -->
+<!-- jQuery -->
+<script src="{{url_for ('static', filename='plugins/jquery/jquery.min.js' ) }}"></script>
+<!-- jQuery UI 1.11.4 -->
+<script src="{{url_for ('static', filename='plugins/jquery-ui/jquery-ui.min.js' ) }}"></script>
+<!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
+<script>
+    $.widget.bridge('uibutton', $.ui.button)
+</script>
+<!-- Bootstrap 4 -->
+<script src="{{url_for ('static', filename='plugins/bootstrap/js/bootstrap.bundle.min.js' ) }}"></script>
+<!-- ChartJS -->
+<script src="{{url_for ('static', filename='plugins/chart.js/Chart.min.js' ) }}"></script>
+<!-- Sparkline -->
+<script src="{{url_for ('static', filename='plugins/sparklines/sparkline.js' ) }}"></script>
+<!-- Summernote -->
+<script src="{{url_for ('static', filename='plugins/summernote/summernote-bs4.min.js' ) }}"></script>
+<!-- overlayScrollbars -->
+<script src="{{url_for ('static', filename='plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js' ) }}"></script>
+<!-- DataTables  & Plugins -->
+<script src="{{url_for ('static', filename='plugins/datatables/jquery.dataTables.min.js' ) }}"></script>
+<script src="{{url_for ('static', filename='plugins/datatables-bs4/js/dataTables.bootstrap4.min.js' ) }}"></script>
+<script src="{{url_for ('static', filename='plugins/datatables-responsive/js/dataTables.responsive.min.js' ) }}"></script>
+<script src="{{url_for ('static', filename='plugins/datatables-responsive/js/responsive.bootstrap4.min.js' ) }}"></script>
+<script src="{{url_for ('static', filename='plugins/datatables-buttons/js/dataTables.buttons.min.js' ) }}"></script>
+<script src="{{url_for ('static', filename='plugins/datatables-buttons/js/buttons.bootstrap4.min.js' ) }}"></script>
+<script src="{{url_for ('static', filename='plugins/jszip/jszip.min.js' ) }}"></script>
+<script src="{{url_for ('static', filename='plugins/pdfmake/pdfmake.min.js' ) }}"></script>
+<script src="{{url_for ('static', filename='plugins/pdfmake/vfs_fonts.js' ) }}"></script>
+<script src="{{url_for ('static', filename='plugins/datatables-buttons/js/buttons.html5.min.js' ) }}"></script>
+<script src="{{url_for ('static', filename='plugins/datatables-buttons/js/buttons.print.min.js' ) }}"></script>
+<script src="{{url_for ('static', filename='plugins/datatables-buttons/js/buttons.colVis.min.js' ) }}"></script>
+<script>
+if ( ! $.fn.DataTable.isDataTable( '#association' ) ) {
+    $('#association').dataTable({
+    dom: 'Bfrtip',
+    buttons: ["csv", "excel", "pdf", "print", "colvis"]
+    });
+    }
+</script>
 {% include 'footer.html'%}

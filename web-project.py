@@ -164,7 +164,7 @@ def datapenilaian():
         cur = mysql.connection.cursor()
         result = cur.execute("SELECT * FROM penilaian")
         userDetails = cur.fetchall()
-        return render_template('datapenilaian.html', userDetails=userDetails,username=session['username'])
+        return render_template('datapenilaian.html', submenu=datapenilaian,userDetails=userDetails,username=session['username'])
     else:
         return redirect(url_for('login'))
 
