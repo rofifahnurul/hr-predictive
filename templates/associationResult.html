@@ -29,9 +29,9 @@
                             <div class='card-body'>
                                 <div class="card card-info">
                                     <div class="card-header">
-                                        <h3 class="card-title">Variabel yang berpengaruh adalah  </h3>
+                                        <h3 class="card-title">Variabel yang berpengaruh adalah   </h3>
                                         {%for i in listItem1%}
-                                        <h3>{{i[1]}}</h3>
+                                        <h3 class="card-title"> 	&nbsp; {{i[1]}}</h3>
                                         {%endfor%}
                                     </div>
                                    
@@ -56,7 +56,7 @@
                                     <div class="card-header">
                                         <h3 class="card-title">Variabel yang berpengaruh adalah </h3>
                                         {%for i in listItem2%}
-                                        <h3>{{i[1]}}</h3>
+                                        <h3 class="card-title"> 	&nbsp;{{i[1]}}</h3>
                                         {%endfor%}
                                     </div>
                                    
@@ -79,6 +79,9 @@
                                 <div class="card card-info">
                                     <div class="card-header">
                                         <h3 class="card-title">Variabel yang berpengaruh adalah </h3>
+                                        {%for i in listItem3%}
+                                        <h3 class="card-title">	&nbsp; {{i[1]}}</h3>
+                                        {%endfor%}
                                     </div>
                                    
                                 </div>
@@ -101,6 +104,9 @@
                                 <div class="card card-info">
                                     <div class="card-header">
                                         <h3 class="card-title">Variabel yang berpengaruh adalah </h3>
+                                        {%for i in listItem4%}
+                                        <h3 class="card-title">	&nbsp; dan {{i[1]}}</h3>
+                                        {%endfor%}
                                     </div>
                                    
                                 </div>

@@ -5,11 +5,11 @@ def create_check(cluster,column_name,data):
   for value in cluster[column_name]:
     avg = cluster[column_name].mean()
     if float(value) >= float(avg):
-      string = str(column_name)+">=" + str(cluster[column_name].mean())
+      string = str(column_name)+">=" + str(round(cluster[column_name].mean(),3))
       result.append(string) 
       
     else:
-      string = str(column_name)+"<" + str(cluster[column_name].mean())
+      string = str(column_name)+"<" + str(round(cluster[column_name].mean(),3))
       result.append(string)
   column_new = str(column_name) + "_check"
   cluster[column_new] = result 

@@ -1,27 +1,344 @@
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.css">
-<table id="table_id" class="display">
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Age</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>James</td>
-            <td>24</td>
-        </tr>
-        <tr>
-            <td>Raj</td>
-            <td>25</td>
-        </tr>
-    </tbody>
-</table>
+{%include 'header.html'%}
+<script src='https://cdn.plot.ly/plotly-2.14.0.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js'></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<!-- Content Wrapper. Contains page content -->
 
-<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.js"></script>
-<script>$(document)
-    .ready(function () {
-      $('#table_id')
-        .DataTable();
+
+    <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0">Clustering Result {{date}}</h1>
+                    </div>
+
+                </div>
+                <!-- /.row -->
+            </div>
+            <!-- /.container-fluid -->
+        </div>
+        <!-- /.content-header -->
+    
+        <!-- Main content -->
+        <section class="content">
+           
+            <div class="container-fluid">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-warning  pull-right" data-toggle="modal" data-target="#asosiasi">Asosiasi Data</button>
+                </div>
+                <div class="card card-info">
+                    <div class="card-header">
+                        <h3 class="card-title">Data with clustering result</h3>                  
+                        <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>                   
+                        </div>
+                    </div>         
+                    <!-- /.card-header -->
+                    <div class="card-body">                       
+                        <table id="clustering" class="table table-striped table-hover">
+                            <thead>
+                            <tr>
+                                <th style="width: 6px">No.</th>
+                                <th>NIK</th>
+                                <th>KPI</th>
+                                <th>Performance</th>
+                                <th>Competency</th>
+                                <th>Learning Point</th>
+                                <th>Kerja Ibadah</th>
+                                <th>Apresiasi</th>
+                                <th>Lebih Cepat</th>
+                                <th>Aktif Bersama</th>
+                                <th>Cluster</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in userDetails %}
+                            <tr>
+
+                                <td>{{loop.index}}</td>
+                                <td>{{ user[1]}}</td>
+                                <td>{{ user[2]}}</td>
+                                <td>{{ user[3]}}</td>
+                                <td>{{ user[4]}}</td>
+                                <td>{{ user[5]}}</td>
+                                <td>{{ user[6]}}</td>
+                                <td>{{ user[7]}}</td>
+                                <td>{{ user[8]}}</td>
+                                <td>{{ user[9]}}</td>
+                                <td>{{ user[10]}}</td>
+                            </tr>
+
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    </div>
+                    <!-- /.card-body -->    
+                </div>
+                <!-- /.card -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="clusteringResult"></div>
+                            <div class="card card-info">
+                                <div class="card-header">
+                                    <h3 class="card-title">Sebaran Cluster</h3>
+                                    <div class="card-tools">
+                                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                           
+                                    </div>
+                                </div>
+                    
+                                <div class="card-body" id='myDiv' style="min-height: 350px; height: 350px; max-height: 350px; max-width: 100%;" >
+                                    <!-- Plotly chart will be drawn inside this DIV -->
+                                </div>
+                            </div>
+                    </div>
+                </div>
+           
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card card-info">
+                            <div class="card-header">
+                                <h3 class="card-title">Donut Cluster</h3>
+                                <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                                </button>                          
+                                </div>
+                            </div>
+                            <div class="card-body" id='donutCluster'style="min-height: 350px; height: 350px; max-height: 350px; max-width: 100%;" >
+                            <!-- Plotly chart will be drawn inside this DIV -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                   
+                        <div class="card card-info">
+                            <div class="card-header">
+                                <h3 class="card-title">Line  Cluster</h3>
+                                <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                                </button>                          
+                                </div>
+                            </div>
+                            <div class="card-body" id='linechart' style="min-height: 350px; height: 350px; max-height: 350px; max-width: 100%;">
+                                <!-- Plotly chart will be drawn inside this DIV -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                   
+                <div id="asosiasi" class="modal fade" role="dialog">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <form action="{{ url_for('associationProcess') }}" method="POST" class="form-horizontal">
+                                <div class='card-body'>
+                                    <div class="card card-info">
+                                        <div class="card-header">
+                                            <h3 class="card-title">Asosiasi</h3>
+                                        </div>
+                                        <!-- Date -->
+                                        <div class="row">
+                                            <div class="m-4">
+                                                <!-- select -->
+                                                <div class="form-group">
+                                                    <label>Cluster yang ingin diasosiasikan</label>
+                                                    <select class="custom-select" name="dataSelect">
+                                                  <option>Semua cluster</option>
+                                                  <option>1</option>
+                                                  <option>2</option>
+                                                  <option>3</option>
+                                                  <option>4</option>                    
+                                                </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group m-4">
+                                            <button class="btn btn-primary" type="submit">Asosiasi Data</button>
+                                        </div>
+
+                                    </div>
+                                </div>
+                                </form>
+
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- /.content -->
+    </div>
+
+<!-- DataTables  & Plugins -->
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/1.3.1/js/dataTables.buttons.min.js"></script> 
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/1.3.1/js/buttons.html5.min.js"></script>
+<!-- /.content-wrapper -->
+<!-- jQuery -->
+<script src="{{url_for ('static', filename='plugins/jquery/jquery.min.js' ) }}"></script>
+<!-- jQuery UI 1.11.4 -->
+<script src="{{url_for ('static', filename='plugins/jquery-ui/jquery-ui.min.js' ) }}"></script>
+<!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
+<script>
+    $.widget.bridge('uibutton', $.ui.button)
+</script>
+<!-- Bootstrap 4 -->
+<script src="{{url_for ('static', filename='plugins/bootstrap/js/bootstrap.bundle.min.js' ) }}"></script>
+<!-- ChartJS -->
+<script src="{{url_for ('static', filename='plugins/chart.js/Chart.min.js' ) }}"></script>
+<!-- Sparkline -->
+<script src="{{url_for ('static', filename='plugins/sparklines/sparkline.js' ) }}"></script>
+<!-- Summernote -->
+<script src="{{url_for ('static', filename='plugins/summernote/summernote-bs4.min.js' ) }}"></script>
+<!-- overlayScrollbars -->
+<script src="{{url_for ('static', filename='plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js' ) }}"></script>
+<!-- DataTables  & Plugins -->
+<script src="{{url_for ('static', filename='plugins/datatables/jquery.dataTables.min.js' ) }}"></script>
+<script src="{{url_for ('static', filename='plugins/datatables-bs4/js/dataTables.bootstrap4.min.js' ) }}"></script>
+<script src="{{url_for ('static', filename='plugins/datatables-responsive/js/dataTables.responsive.min.js' ) }}"></script>
+<script src="{{url_for ('static', filename='plugins/datatables-responsive/js/responsive.bootstrap4.min.js' ) }}"></script>
+<script src="{{url_for ('static', filename='plugins/datatables-buttons/js/dataTables.buttons.min.js' ) }}"></script>
+<script src="{{url_for ('static', filename='plugins/datatables-buttons/js/buttons.bootstrap4.min.js' ) }}"></script>
+<script src="{{url_for ('static', filename='plugins/jszip/jszip.min.js' ) }}"></script>
+<script src="{{url_for ('static', filename='plugins/pdfmake/pdfmake.min.js' ) }}"></script>
+<script src="{{url_for ('static', filename='plugins/pdfmake/vfs_fonts.js' ) }}"></script>
+<script src="{{url_for ('static', filename='plugins/datatables-buttons/js/buttons.html5.min.js' ) }}"></script>
+<script src="{{url_for ('static', filename='plugins/datatables-buttons/js/buttons.print.min.js' ) }}"></script>
+<script src="{{url_for ('static', filename='plugins/datatables-buttons/js/buttons.colVis.min.js' ) }}"></script>
+<script>
+    d3.json("{{ url_for('viewPCA') }}", function(err, rows) {
+        function unpack(rows, key) {
+            return rows.map(function(row) {
+                return row[key];
+            });
+        }
+        data = [];
+
+        const conditions = [1, 2, 3, 4]
+
+
+        var trace1 = {
+            x: unpack(rows, 'pc1'),
+            y: unpack(rows, 'pc2'),
+            z: unpack(rows, 'pc3'),
+
+            mode: 'markers',
+            marker: {
+                size: 12,
+                color: unpack(rows, 'y'),
+                colorscale: 'viridis',
+                width: 0.5,
+                opacity: 0.8
+            },
+            type: 'scatter3d'
+        };
+
+
+        var data = [trace1];
+        var layout = {
+            margin: {
+                l: 0,
+                r: 0,
+                b: 0,
+                t: 0
+            }
+        };
+        Plotly.newPlot('myDiv', data, layout);
     });
-    </script>
+
+    window.onload = function() {
+    var dataset = {{ count | tojson }};
+    var data = [{
+        values: [dataset[0],dataset[1],dataset[2],dataset[3]],
+        labels: ['cluster 1','cluster 2','cluster 3','cluster 4'],
+        domain: {
+            column: 0
+        },
+        name: 'Count', 
+        hoverinfo: 'label+percent+name+values',
+        hole: .4,
+        type: 'pie',
+    }];
+  
+    
+    console.log(dataset[0],dataset[1],dataset[2],dataset[3] )
+    var layout = {
+        title: 'Count of Each Cluster',
+        annotations: [{
+            font: {
+                size: 20
+            },
+            showarrow: false,
+            text: 'Count',
+            x: 0.17,
+            y: 0.5
+        }],
+        height: 400,
+        width: 500,
+
+        showlegend: true,
+        grid: {
+            rows: 1,
+            columns: 2
+        }
+    };
+
+    Plotly.newPlot('donutCluster', data, layout);
+    }
+
+    
+    var column = ['kpi','performance','competency','learning point','kerja ibadah','apresiasi','lebih cepat lebih baik', 'aktif bersama'];
+    var dataset = {{ meanList| tojson }};
+
+    var trace1 = {
+        x: ['kpi','performance','competency','learning point','kerja ibadah','apresiasi','lebih cepat lebih baik', 'aktif bersama'],
+        y: [dataset[0],dataset[1],dataset[2],dataset[3],dataset[4],dataset[5],dataset[6],dataset[7]],
+        mode:'lines',
+        type: 'scatter'
+        
+    };
+    
+    console.log(y)
+    var trace2 = {
+        x: ['kpi','performance','competency','learning point','kerja ibadah','apresiasi','lebih cepat lebih baik', 'aktif bersama'],
+        y: [dataset[8],dataset[9],dataset[10],dataset[11],dataset[12],dataset[13],dataset[14],dataset[15]],
+        mode:'lines',
+        type: 'scatter'
+    };
+    console.log(dataset)
+    var data = [trace1, trace2];
+    var layout={
+        title: 'Mean of each cluster',
+        height: 400,
+        width: 500,
+        xaxis:{
+            type:'category'
+        }
+    }
+    Plotly.newPlot('linechart', data);
+
+    if ( ! $.fn.DataTable.isDataTable( '#clustering' ) ) {
+        $('#clustering').dataTable({
+        dom: 'Bfrtip',
+        buttons: ["csv", "excel", "pdf", "print", "colvis"]
+  });
+}
+</script>
+
+<!-- /.content-wrapper -->
+{% include 'footer.html'%}

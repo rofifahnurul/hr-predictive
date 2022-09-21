@@ -36,6 +36,71 @@ app.config['SECRET_KEY'] = 'super secret key'
 
 mysql = MySQL(app)
 
+def kmeansScratch(K,data_numeric, Centroids,data):
+    columnC = Centroids.columns
+    diff = 1
+    j=0
+    flag = 0
+    while (diff!=0):
+        XD=data_numeric
+        column = XD.columns
+        i=1
+        for index1, row_c in Centroids.iterrows():
+            ED=[]
+            for index2, row_d in XD.iterrows():
+                d1 = (row_d[column[0]]-row_c[columnC[0]])**2
+                d2 = (row_d[column[1]]-row_c[columnC[1]])**2
+                d3 = (row_d[column[2]]-row_c[columnC[2]])**2
+                d4 = (row_d[column[3]]-row_c[columnC[3]])**2
+                d5 = (row_d[column[4]]-row_c[columnC[4]])**2
+                d6 = (row_d[column[5]]-row_c[columnC[5]])**2
+                d7 = (row_d[column[6]]-row_c[columnC[6]])**2
+                d8 = (row_d[column[7]]-row_c[columnC[7]])**2
+                d = np.sqrt(d1+d2+d3+d4+d5+d6+d7+d8)
+                ED.append(d)
+            data_numeric[i]=ED
+            i=i+1
+
+        C=[]
+             
+        
+        for index,row in data_numeric.iterrows():
+            min_dist=row[1]
+            pos=1
+            for i in range(K-1):                  
+                if row[i+2] < float(min_dist):   
+                    min_dist = row[i+2]
+                    pos=i+2
+            C.append(pos)
+            if flag == 0:                              
+                print("Masuk",pos)
+            else:
+                print("update",pos,row[1],row[2],row[3],row[4])
+
+        flag+=1
+        data_numeric["cluster"]=C
+        data["cluster"] =C
+
+        Centroids_new = data_numeric.groupby(["cluster"]).mean()[[column[0],column[1],column[2],column[3],
+        column[4],column[5],column[6],column[7]]]
+
+        if j == 0:
+            diff=1
+            j=j+1
+        else:
+            diff = (Centroids_new[column[0]] - Centroids[column[0]]).sum() 
+            + (Centroids_new[column[1]] - Centroids[column[1]]).sum() 
+            + (Centroids_new[column[2]] - Centroids[column[2]]).sum() 
+            + (Centroids_new[column[3]] - Centroids[column[3]]).sum() 
+            + (Centroids_new[column[4]] - Centroids[column[4]]).sum() 
+            + (Centroids_new[column[5]] - Centroids[column[5]]).sum() 
+            + (Centroids_new[column[6]] - Centroids[column[6]]).sum() 
+            + (Centroids_new[column[7]] - Centroids[column[7]]).sum()
+            print(diff.sum())                             
+        Centroids = data_numeric.groupby(["cluster"]).mean()[[column[0],column[1],column[2],column[3],
+        column[4],column[5],column[6],column[7]]]
+
+    return Centroids, data, data_numeric
 
 def insertItem(cluster,tahun):
     conn = mysql.connection
@@ -70,14 +135,29 @@ def insertSQLRules(associationRules,cluster,minSupp, minConf,tahun):
     listCol = []
     colNames = ["kpi","performance","learning","competency","learning","kerjaIbadah","apresiasi","lebihCepat","aktifBersama"]
     for row in associationRules:
-        left = row[0]
+        
+        left = list(row[0])
+        print("len",len(left))
+        if len(left)>1:
+            for i in range(len(left)-1):
+                left = left[i]+ ", " + left[i+1]
+            print("left",left)
+        
         right = row[1]
+        print("len right",len(right))
+        if len(right)>1:
+            for i in range(len(right)-1):
+                right= right[i]+ ", " + right[i+1]
+            print("right",right)
         support = row[5]
         confidence = row[2]
         lift = row[3]
         conviction = row[4] 
+    
+        #print("right",len(right))
+        
         cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO asosiasi(leftHand,rightHand,support,confidence,lift,conviction,minSupp,minConf,cluster,tahun) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",(left,right,support,confidence,lift,conviction,minSupp,minConf,cluster,tahun))
+        cur.execute("INSERT INTO asosiasi (leftHand,rightHand,support,confidence,lift,conviction,minSupp,minConf,cluster,tahun) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",(left,right,support,confidence,lift,conviction,minSupp,minConf,cluster,tahun))
         mysql.connection.commit()
     
         
@@ -313,72 +393,10 @@ def clusterProcess():
                     K=4
                     Centroids = data_numeric.sample(n=K)
                     tes = data_numeric.sample(n=K)
-                    columnC = Centroids.columns
-
-                    diff = 1
-                    j=0
                     
-                    flag = 0
-                    while (diff!=0):
-                        
-                        XD=data_numeric
-                        column = XD.columns
-                        i=1
-                        for index1, row_c in Centroids.iterrows():
-                            ED=[]
-                            for index2, row_d in XD.iterrows():
-                                d1 = (row_d[column[0]]-row_c[columnC[0]])**2
-                                d2 = (row_d[column[1]]-row_c[columnC[1]])**2
-                                d3 = (row_d[column[2]]-row_c[columnC[2]])**2
-                                d4 = (row_d[column[3]]-row_c[columnC[3]])**2
-                                d5 = (row_d[column[4]]-row_c[columnC[4]])**2
-                                d6 = (row_d[column[5]]-row_c[columnC[5]])**2
-                                d7 = (row_d[column[6]]-row_c[columnC[6]])**2
-                                d8 = (row_d[column[7]]-row_c[columnC[7]])**2
-                                d = np.sqrt(d1+d2+d3+d4+d5+d6+d7+d8)
-                                ED.append(d)
-                            data_numeric[i]=ED
-                            i=i+1
+                    centroidFix, dataFix, data_numerics = kmeansScratch(K,data_numeric, Centroids,data)
 
-                        C=[]                      
-                        for index,row in data_numeric.iterrows():
-                            min_dist=row[1]
-                            pos=1
-                            for i in range(K-1):                  
-                                if row[i+2] < float(min_dist):   
-                                    min_dist = row[i+2]
-                                    pos=i+2
-                            C.append(pos)
-                            if flag == 0:                              
-                                print("Masuk",pos)
-                            else:
-                                print("update",pos,row[1],row[2],row[3],row[4])
-
-                        flag+=1
-                        data_numeric["cluster"]=C
-                        data["cluster"] =C
-
-                        Centroids_new = data_numeric.groupby(["cluster"]).mean()[[column[0],column[1],column[2],column[3],
-                        column[4],column[5],column[6],column[7]]]
-
-                        if j == 0:
-                            diff=1
-                            j=j+1
-                        else:
-                            diff = (Centroids_new[column[0]] - Centroids[column[0]]).sum() 
-                            + (Centroids_new[column[1]] - Centroids[column[1]]).sum() 
-                            + (Centroids_new[column[2]] - Centroids[column[2]]).sum() 
-                            + (Centroids_new[column[3]] - Centroids[column[3]]).sum() 
-                            + (Centroids_new[column[4]] - Centroids[column[4]]).sum() 
-                            + (Centroids_new[column[5]] - Centroids[column[5]]).sum() 
-                            + (Centroids_new[column[6]] - Centroids[column[6]]).sum() 
-                            + (Centroids_new[column[7]] - Centroids[column[7]]).sum()
-                            print(diff.sum())                             
-                        Centroids = data_numeric.groupby(["cluster"]).mean()[[column[0],column[1],column[2],column[3],
-                        column[4],column[5],column[6],column[7]]]
-                    
-
-                    for index, row in data.iterrows():
+                    for index, row in dataFix.iterrows():
                         cluster = row['cluster']
                         id = row['id']
                         #Clustering result is added to database   
@@ -424,19 +442,21 @@ def clusterProcess():
 def clusteringResult():
     if 'loggedin' in session:   
         cur = mysql.connection.cursor()
-        result = cur.execute("SELECT * FROM penilaian")
+        result = cur.execute("SELECT * FROM penilaian WHERE cluster is NOT NULL")
         userDetails = cur.fetchall()
         conn = mysql.connection
         cur = conn.cursor()
-        cur.execute("SELECT * FROM penilaian")
+        cur.execute("SELECT * FROM penilaian WHERE cluster is NOT NULL")
         columnNames  = cur.description
-        count = donutCluster()
-        meanList = linechart()
+        count=[]
+        meanList=[]
         if not result:
             msg = "Table is empty"
-            return render_template('clustering-result.html', userDetails=userDetails,count = count, meanList=meanList)
+            
+            return redirect(url_for('normalisasiResult'))
         else:
-      
+            count = donutCluster()
+            meanList = linechart()
             return render_template('clustering-result.html', userDetails=userDetails,count=count,meanList=meanList)
     else:
         return redirect(url_for('login'))
@@ -510,11 +530,14 @@ def associationProcess():
                     else:
                         insertSQLRules(association_rules2, 2, min_support,min_confidence,tahun)
                     
+                    print("awal :", len(association_rules3))
                     if len(association_rules3)>5:
                         association_rules3,min_support_new,min_confidence_new = checkRules(association_rules3,data3,min_support,min_confidence)
-                        insertSQLRules(association_rules3, 3, min_support_new,min_confidence_new,tahun)  
+                        insertSQLRules(association_rules3, 3, min_support_new,min_confidence_new,tahun)
+                        print("if more :", len(association_rules3))  
                     else:
                         insertSQLRules(association_rules3, 3, min_support,min_confidence,tahun)
+                        print("less :", len(association_rules3))
 
                     if len(association_rules4)>5:
                         association_rules4,min_support_new,min_confidence_new = checkRules(association_rules4,data4,min_support,min_confidence)
@@ -567,7 +590,7 @@ def associationResult():
         columnNames  = cur.description
         if not details:
             msg = "Table is empty"
-            return render_template('clustering-result.html')
+            return render_template('normalisasiResult.html')
         else:
             data = pd.DataFrame(details,columns =['id','leftHand','rightHand','support','confidence','lift','conviction','minSupp','minConf','cluster','tahun'])
             
