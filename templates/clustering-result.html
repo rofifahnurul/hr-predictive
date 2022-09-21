@@ -231,7 +231,7 @@
     var dataset = {{ count | tojson }};
     var data = [{
         values: [dataset[0],dataset[1],dataset[2],dataset[3]],
-        labels: [1,2,3,4],
+        labels: ['cluster 1','cluster 2','cluster 3','cluster 4'],
         domain: {
             column: 0
         },
@@ -284,8 +284,20 @@
         mode:'lines',
         type: 'scatter'
     };
+    var trace3 = {
+        x: ['kpi','performance','competency','learning point','kerja ibadah','apresiasi','lebih cepat lebih baik', 'aktif bersama'],
+        y: [dataset[16],dataset[17],dataset[18],dataset[19],dataset[20],dataset[21],dataset[22],dataset[23]],
+        mode:'lines',
+        type: 'scatter'
+    };
+    var trace4 = {
+        x: ['kpi','performance','competency','learning point','kerja ibadah','apresiasi','lebih cepat lebih baik', 'aktif bersama'],
+        y: [dataset[24],dataset[25],dataset[26],dataset[27],dataset[28],dataset[29],dataset[30],dataset[31]],
+        mode:'lines',
+        type: 'scatter'
+    };
     console.log(dataset)
-    var data = [trace1, trace2];
+    var data = [trace1, trace2,trace3, trace4];
     var layout={
         xaxis:{
             type:'category'

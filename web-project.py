@@ -664,9 +664,9 @@ def linechart():
         cluster4 = pd.DataFrame(data.loc[data['cluster'] == 4])
     
         mean1 = cluster1.describe().loc['mean']
-        mean2 = cluster1.describe().loc['mean']
-        mean3 = cluster1.describe().loc['mean']
-        mean4 = cluster1.describe().loc['mean']
+        mean2 = cluster2.describe().loc['mean']
+        mean3 = cluster3.describe().loc['mean']
+        mean4 = cluster4.describe().loc['mean']
 
         meanList=[]
         flag=3
@@ -676,16 +676,16 @@ def linechart():
         
         flag=3
         for i in range(8):        
-            meanList.append(mean2[flag])
+            meanList.append(mean2.values[flag])
             flag+=1
 
         flag=3
         for i in range(8):        
-            meanList.append(mean3[flag])
+            meanList.append(mean3.values[flag])
             flag+=1
         flag=3
         for i in range(8):        
-            meanList.append(mean4[flag])
+            meanList.append(mean4.values[flag])
             flag+=1
 
         #return mean1,mean2,mean3,mean4
