@@ -280,7 +280,6 @@
         x: ['kpi','performance','competency','learning point','kerja ibadah','apresiasi','lebih cepat lebih baik', 'aktif bersama'],
         y: [dataset[0],dataset[1],dataset[2],dataset[3],dataset[4],dataset[5],dataset[6],dataset[7]],
         mode:'lines',
-        name:'Cluster 1',
         type: 'scatter'
     };
 
@@ -288,27 +287,23 @@
         x: ['kpi','performance','competency','learning point','kerja ibadah','apresiasi','lebih cepat lebih baik', 'aktif bersama'],
         y: [dataset[8],dataset[9],dataset[10],dataset[11],dataset[12],dataset[13],dataset[14],dataset[15]],
         mode:'lines',
-        name:'Cluster 2',
         type: 'scatter'
     };
     var trace3 = {
         x: ['kpi','performance','competency','learning point','kerja ibadah','apresiasi','lebih cepat lebih baik', 'aktif bersama'],
         y: [dataset[16],dataset[17],dataset[18],dataset[19],dataset[20],dataset[21],dataset[22],dataset[23]],
         mode:'lines',
-        name:'Cluster 3',
         type: 'scatter'
     };
     var trace4 = {
         x: ['kpi','performance','competency','learning point','kerja ibadah','apresiasi','lebih cepat lebih baik', 'aktif bersama'],
         y: [dataset[24],dataset[25],dataset[26],dataset[27],dataset[28],dataset[29],dataset[30],dataset[31]],
         mode:'lines',
-        name:'Cluster 4',
         type: 'scatter'
     };
     console.log(dataset)
     var data = [trace1, trace2,trace3, trace4];
     var layout={
-        title:"Rata-rata nilai tiap cluster",
         xaxis:{
             type:'category'
         }

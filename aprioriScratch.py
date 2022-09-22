@@ -144,7 +144,7 @@ def generateRules(data,min_support, min_confidence):
     #len_right = create_rules(freq_items, item_support_dict, min_confidence = 0.8)
     return association_rules,freq_item_support
 
-def checkRules(rules, data, min_support,min_confidence):
+def checkReduceRules(rules, data, min_support,min_confidence):
     while len(rules) > 5:                           
         min_support = min_support + 0.025
         rules,freq_item_support = generateRules(data, min_support, min_confidence)
@@ -164,3 +164,27 @@ def checkRules(rules, data, min_support,min_confidence):
                 break;
     
     return rules, min_support,min_confidence
+
+def checkIncreaseRules(rules,data,min_support,min_confidence):
+    while len(rules) == 0:                           
+        min_support = min_support - 0.025
+        rules,freq_item_support = generateRules(data, min_support, min_confidence)
+        print(len(rules),min_support)
+
+        if min_support <= 0.3 and len(rules) == 0:
+            min_confidence = min_confidence - 0.01
+            rules,freq_item_support = generateRules(data, min_support, min_confidence)
+            print("kondisi1 ",len(rules),min_support)
+
+            if len(rules) > 0 or min_support <=0.3:
+                print("kondisi2",len(rules),min_support)
+                break;
+
+            if min_support <=0.85 and min_confidence <0.8 and len(rules) == 0:
+                print("kondisi3",len(rules),min_support)
+                break;
+    
+    return rules, min_support,min_confidence
+
+
+                    

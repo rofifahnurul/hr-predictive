@@ -72,10 +72,10 @@ def kmeansScratch(K,data_numeric, Centroids,data):
                     min_dist = row[i+2]
                     pos=i+2
             C.append(pos)
-            if flag == 0:                              
-                print("Masuk",pos)
-            else:
-                print("update",pos,row[1],row[2],row[3],row[4])
+            #if flag == 0:                              
+            #    print("Masuk",pos)
+            #else:
+                #print("update",pos,row[1],row[2],row[3],row[4])
 
         flag+=1
         data_numeric["cluster"]=C
@@ -102,6 +102,25 @@ def kmeansScratch(K,data_numeric, Centroids,data):
 
     return Centroids, data, data_numeric
 
+def statistic(data,cluster, year):
+    df = pd.DataFrame(data.loc[data['cluster'] == cluster]).describe()
+    #cluster2 = pd.DataFrame(data.loc[data['cluster'] == 2]).describe()
+    #cluster3 = pd.DataFrame(data.loc[data['cluster'] == 3]).describe()
+    #cluster4 = pd.DataFrame(data.loc[data['cluster'] == 4]).describe()
+    
+    conn = mysql.connection
+    cur = conn.cursor()
+
+    count = df.to_numpy()[0][2]
+    mean = df.to_numpy()[1]
+
+    #for i in range(len(mean)-2):
+    #    print("mean",mean[i+1])
+    #    cluster = 1
+    cur.execute('INSERT INTO statistic(cluster, count, kpiMean, performanceMean, competencyMean, learningMean, kerjaIbadahMean, apresiasiMean, lebihCepatMean, aktifBersamaMean, tahun ) VALUES (%s, % s, %s,%s,%s,%s,%s,%s,%s,%s, %s)', (cluster, count, mean[1],mean[2],mean[3],mean[4],mean[5],mean[6],mean[7],mean[8],year))
+    
+    mysql.connection.commit()
+
 def insertItem(cluster,tahun):
     conn = mysql.connection
     cur = conn.cursor()
@@ -115,8 +134,11 @@ def insertItem(cluster,tahun):
         
         for i in data['leftHand']:
             if column in i:
-                listCol.append(column)
-                print("left hand", i, column)
+                if column in listCol:
+                    pass
+                else:
+                    listCol.append(column)
+                    print("left hand", i, column)
         for i in data['rightHand']:
             if column in i:
                 if column in listCol:
@@ -136,8 +158,9 @@ def insertSQLRules(associationRules,cluster,minSupp, minConf,tahun):
     colNames = ["kpi","performance","learning","competency","learning","kerjaIbadah","apresiasi","lebihCepat","aktifBersama"]
     for row in associationRules:
         
-        left = list(row[0])
-        print("len",len(left))
+        left = row[0]
+        
+        print("len ",len(left),"left",left,"cluster",cluster)
         if len(left)>1:
             for i in range(len(left)-1):
                 left = left[i]+ ", " + left[i+1]
@@ -160,7 +183,15 @@ def insertSQLRules(associationRules,cluster,minSupp, minConf,tahun):
         cur.execute("INSERT INTO asosiasi (leftHand,rightHand,support,confidence,lift,conviction,minSupp,minConf,cluster,tahun) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",(left,right,support,confidence,lift,conviction,minSupp,minConf,cluster,tahun))
         mysql.connection.commit()
     
-        
+def finalCheck(association_rules,data,min_support,min_confidence,tahun,cluster):
+    if len(association_rules) == 0:
+        checkIncreaseRules(association_rules,data,min_support,min_confidence)
+    
+    if len(association_rules)>5:
+        association_rules,min_support_new,min_confidence_new = checkReduceRules(association_rules,data,min_support,min_confidence)
+        insertSQLRules(association_rules, cluster, min_support_new,min_confidence_new,tahun)  
+    else:
+        insertSQLRules(association_rules, cluster, min_support,min_confidence,tahun)      
 
 @app.route('/register', methods =['GET', 'POST'])
 def register():
@@ -308,39 +339,43 @@ def normalisasi():
             cur = conn.cursor() 
             if dataSelect == "Semua data":
                 result = cur.execute("SELECT id, nik, kpi, performance, competency, learning, kerjaIbadah, apresiasi, lebihCepat, aktifBersama FROM penilaian")
-                if not result:
-                    msg = "Table is empty"
-                    return render_template('datapenilaian.html')
-                else:
-                    columnNames  = cur.description
-                    dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
-                    dataResult = pd.DataFrame(dataResult)
+            else:
+                year = dataSelect
+                result = cur.execute("SELECT id, nik, kpi, performance, competency, learning, kerjaIbadah, apresiasi, lebihCepat, aktifBersama FROM penilaian WHERE tahun = %s",(year))
+                
+            if not result:
+                msg = "Table is empty"
+                return render_template('datapenilaian.html')
+            else:
+                columnNames  = cur.description
+                dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
+                dataResult = pd.DataFrame(dataResult)
 
-                    data_numeric = dataResult.iloc[:,:10]
+                data_numeric = dataResult.iloc[:,:10]
                     
-                    array = data_numeric.values
-                    X = array[:,2:10]
+                array = data_numeric.values
+                X = array[:,2:10]
             
-                    min_max_scaler = preprocessing.MinMaxScaler(feature_range=(0,1)) #inisialisasi normalisasi MinMax
-                    data = min_max_scaler.fit_transform(X) #transformasi MinMax untuk fitur
-                    df = pd.DataFrame({'id':array[:,0],'kpi':data[:,0],'performance':data[:,1],'competency':data[:,2],'learning':data[:,3],'kerjaIbadah':data[:,4],'apresiasi':data[:,5],'lebihCepat':data[:,6],'aktifBersama':data[:,7]})
-                    for index,row in df.iterrows():                      
-                        id = int(row['id'])
-                        kpiNorm = row['kpi']
-                        print("kpiNorm",kpiNorm)
-                        performanceNorm = row['performance']
-                        competencyNorm = row['competency']
-                        learningNorm = row['learning']
-                        kerjaIbadahNorm = row['kerjaIbadah']
-                        apresiasiNorm = row['apresiasi']
-                        lebihCepatNorm = row['lebihCepat']
-                        aktifBersamaNorm = row['aktifBersama']
-                        cur = mysql.connection.cursor()  
-                        cur.execute("UPDATE penilaian SET kpiNorm = %s, performanceNorm = %s, competencyNorm = %s, learningNorm = %s, kerjaIbadahNorm = %s, apresiasiNorm = %s, lebihCepatNorm = %s, aktifBersamaNorm = %s WHERE id = %s",(kpiNorm, performanceNorm, competencyNorm, learningNorm, kerjaIbadahNorm, apresiasiNorm, lebihCepatNorm, aktifBersamaNorm,id))
-                        mysql.connection.commit()
-                    return redirect(url_for('normalisasiResult'))
+                min_max_scaler = preprocessing.MinMaxScaler(feature_range=(0,1)) #inisialisasi normalisasi MinMax
+                data = min_max_scaler.fit_transform(X) #transformasi MinMax untuk fitur
+                df = pd.DataFrame({'id':array[:,0],'kpi':data[:,0],'performance':data[:,1],'competency':data[:,2],'learning':data[:,3],'kerjaIbadah':data[:,4],'apresiasi':data[:,5],'lebihCepat':data[:,6],'aktifBersama':data[:,7]})
+                for index,row in df.iterrows():                      
+                    id = int(row['id'])
+                    kpiNorm = row['kpi']
+                    print("kpiNorm",kpiNorm)
+                    performanceNorm = row['performance']
+                    competencyNorm = row['competency']
+                    learningNorm = row['learning']
+                    kerjaIbadahNorm = row['kerjaIbadah']
+                    apresiasiNorm = row['apresiasi']
+                    lebihCepatNorm = row['lebihCepat']
+                    aktifBersamaNorm = row['aktifBersama']
+                    cur = mysql.connection.cursor()  
+                    cur.execute("UPDATE penilaian SET kpiNorm = %s, performanceNorm = %s, competencyNorm = %s, learningNorm = %s, kerjaIbadahNorm = %s, apresiasiNorm = %s, lebihCepatNorm = %s, aktifBersamaNorm = %s WHERE id = %s",(kpiNorm, performanceNorm, competencyNorm, learningNorm, kerjaIbadahNorm, apresiasiNorm, lebihCepatNorm, aktifBersamaNorm,id))
+                    mysql.connection.commit()
+                return redirect(url_for('normalisasiResult'))
 
-            return redirect(url_for('datapenilaian')) 
+            #return redirect(url_for('datapenilaian')) 
 
         return redirect(url_for('datapenilaian'))
     else:
@@ -376,68 +411,52 @@ def clusterProcess():
             cur = conn.cursor()   
 
             if dataSelect == "Semua data":
-                result = cur.execute("SELECT * FROM penilaian")
-                if not result:
-                    msg = "Table is empty"
-                    return render_template('datapenilaian.html')
-                else:                  
-                    conn = mysql.connection
-                    cur = conn.cursor()     
-                    cur.execute("SELECT * FROM penilaian")
-                    columnNames  = cur.description
-                    dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
-                    data = pd.DataFrame(dataResult)
-                    data_numeric = data.iloc[:,2:10]
-                    
-
-                    K=4
-                    Centroids = data_numeric.sample(n=K)
-                    tes = data_numeric.sample(n=K)
-                    
-                    centroidFix, dataFix, data_numerics = kmeansScratch(K,data_numeric, Centroids,data)
-
-                    for index, row in dataFix.iterrows():
-                        cluster = row['cluster']
-                        id = row['id']
-                        #Clustering result is added to database   
-                        cur = mysql.connection.cursor()        
-                        cur.execute("UPDATE penilaian SET cluster = %s WHERE id = %s",(cluster,id))
-                        mysql.connection.commit()
-                    return redirect(url_for('clusteringResult'))
-
+                result = cur.execute("SELECT id, nik, kpiNorm, performanceNorm, competencyNorm, learningNorm, kerjaIbadahNorm, apresiasiNorm,  lebihCepatNorm, aktifBersamaNorm FROM penilaian")
+                columnNames  = cur.description
             else:
                 year = dataSelect
-                result = cur.execute("SELECT * FROM penilaian WHERE tahun = %s" ,year)
-                if not result:
-                    msg = "Table is empty"
-                    return render_template('datapenilaian.html')
-                else:
+                result = cur.execute("SELECT id, nik, kpiNorm, performanceNorm, competencyNorm, learningNorm, kerjaIbadahNorm, apresiasiNorm,  lebihCepatNorm, aktifBersamaNorm FROM penilaian WHERE tahun = %s",(year))
+                columnNames  = cur.description
+            if not result:
+                msg = "Table is empty"
+                return render_template('datapenilaian.html')
+            else:                  
+                #conn = mysql.connection
+                #cur = conn.cursor()     
+                #cur.execute("SELECT * FROM penilaian")
+                year = dataSelect
+                dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
+                data = pd.DataFrame(dataResult)
+                data_numeric = data.iloc[:,2:10]
                     
-                    cur.execute("SELECT * FROM penilaian WHERE tahun = %s" ,year)
-                    columnNames  = cur.description
-                    dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
-                    data = pd.DataFrame(dataResult)
-                    data_numeric = data.iloc[:,2:10]
+                K=4
+                Centroids = data_numeric.sample(n=K)
+                tes = data_numeric.sample(n=K)
+                    
+                centroidFix, dataFix, data_numerics = kmeansScratch(K,data_numeric, Centroids,data)
 
-                    data, data_numeric = kmeans(data,data_numeric)
+                for index, row in dataFix.iterrows():
+                    cluster = row['cluster']
+                    id = row['id']
+                    #Clustering result is added to database   
+                    cur = mysql.connection.cursor()        
+                    cur.execute("UPDATE penilaian SET cluster = %s WHERE id = %s",(cluster,id))
+                    mysql.connection.commit()
 
-                    cur = mysql.connection.cursor()
+                statistic(dataFix,1,year)
+                statistic(dataFix,2,year)
+                statistic(dataFix,3,year)
+                statistic(dataFix,4,year)
 
-                    for index, row in data.iterrows():
-                        cluster = row['cluster']
-                        id = row['id']
+                return redirect(url_for('clusteringResult'))
 
-                        #Clustering result is added to database   
-                        cur = mysql.connection.cursor()        
-                        cur.execute("UPDATE penilaian SET cluster = %s WHERE id = %s",(cluster,id))
-                        mysql.connection.commit()
-
-                    return redirect(url_for('clusteringResult'))
+            
         return redirect(url_for('clusteringResult'))
     else:
         return redirect(url_for('login'))
 
 #Create route to clustering result to show clustering result from database
+
 @app.route("/clusteringResult", methods=['GET','POST'])
 def clusteringResult():
     if 'loggedin' in session:   
@@ -451,17 +470,21 @@ def clusteringResult():
         count=[]
         meanList=[]
         if not result:
-            msg = "Table is empty"
-            
+            msg = "Table is empty"           
             return redirect(url_for('normalisasiResult'))
+        
         else:
             count = donutCluster()
             meanList = linechart()
             return render_template('clustering-result.html', userDetails=userDetails,count=count,meanList=meanList)
+        
+        
+        
     else:
         return redirect(url_for('login'))
 
 
+   
 #Create route to asosiasi process 
 @app.route("/associationProcess", methods=['GET','POST'])
 def associationProcess():
@@ -472,109 +495,68 @@ def associationProcess():
             conn = mysql.connection
             cur = conn.cursor()   
 
-            if dataSelect == "Semua cluster":
+            if dataSelect == "Semua data":
                 result = cur.execute("SELECT * FROM penilaian")
-                if not result:
-                    msg = "Table is empty"
-                    return redirect(url_for('clusteringResult'))
-                else:
-                    cur.execute("SELECT * FROM penilaian")
-                    columnNames  = cur.description
-                    dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
-                    data = pd.DataFrame(dataResult)
-                    column = data.columns
+            else:
+                year = dataSelect
+                result = cur.execute("SELECT id, nik, kpiNorm, performanceNorm, competencyNorm, learningNorm, kerjaIbadahNorm, apresiasiNorm, lebihCepatNorm, aktifBersamaNorm, tahun, cluster FROM penilaian WHERE tahun = %s",(year))
+            
+            if not result:
+                msg = "Table is empty"
+                return redirect(url_for('clusteringResult'))
+            else:
+                
+                columnNames  = cur.description
+                dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
+                data = pd.DataFrame(dataResult)
+                column = data.columns
                     
                     #select data
-                    cluster1 = data.loc[data['cluster'] == 1]
-                    cluster2 = data.loc[data['cluster'] == 2]
-                    cluster3 = data.loc[data['cluster'] == 3]
-                    cluster4 = data.loc[data['cluster'] == 4]
+                cluster1 = data.loc[data['cluster'] == 1]
+                cluster2 = data.loc[data['cluster'] == 2]
+                cluster3 = data.loc[data['cluster'] == 3]
+                cluster4 = data.loc[data['cluster'] == 4]
 
                     #prepare to make a new dataframe (make categorical value for each cluster)
-                    data1 = pd.DataFrame()
-                    for i in range (2,10):
-                        create_check(cluster1,column[i],data1)
+                data1 = pd.DataFrame()
+                for i in range (2,10):
+                    create_check(cluster1,column[i],data1)
     
-                    data2 = pd.DataFrame()
-                    for i in range (2,10):
-                        create_check(cluster2,column[i],data2)
+                data2 = pd.DataFrame()
+                for i in range (2,10):
+                    create_check(cluster2,column[i],data2)
 
-                    data3 = pd.DataFrame()
-                    for i in range (2,10):
-                        create_check(cluster3,column[i],data3)
+                data3 = pd.DataFrame()
+                for i in range (2,10):
+                    create_check(cluster3,column[i],data3)
     
-                    data4 = pd.DataFrame()
-                    for i in range (2,10):
-                        create_check(cluster4,column[i],data4)
+                data4 = pd.DataFrame()
+                for i in range (2,10):
+                    create_check(cluster4,column[i],data4)
 
-                    status = 0
-                    min_support = 0.55
-                    min_confidence = 0.9
+                status = 0
+                min_support = 0.55
+                min_confidence = 0.9
 
-                    association_rules1,freq_item_support1 = generateRules(data1,min_support,min_confidence)    
-                    association_rules2,freq_item_support1 = generateRules(data2,min_support,min_confidence)    
-                    association_rules3,freq_item_support1= generateRules(data3,min_support,min_confidence)             
-                    association_rules4,freq_item_support1 = generateRules(data4,min_support,min_confidence)
-                    tahun = data['tahun']
-                    tahun = tahun[0]
-                  
-                    if len(association_rules1)>5:
-                        association_rules1,min_support_new,min_confidence_new = checkRules(association_rules1,data1,min_support,min_confidence)
-                        insertSQLRules(association_rules1, 1, min_support_new,min_confidence_new,tahun)  
-                    else:
-                        insertSQLRules(association_rules1, 1, min_support,min_confidence,tahun)
+                association_rules1,freq_item_support1 = generateRules(data1,min_support,min_confidence)    
+                association_rules2,freq_item_support1 = generateRules(data2,min_support,min_confidence)    
+                association_rules3,freq_item_support1= generateRules(data3,min_support,min_confidence)             
+                association_rules4,freq_item_support1 = generateRules(data4,min_support,min_confidence)
+                tahun = data['tahun']
+                tahun = tahun[0]
+
+                finalCheck(association_rules1,data,min_support,min_confidence,tahun,1)
+                finalCheck(association_rules2,data,min_support,min_confidence,tahun,2)
+                finalCheck(association_rules3,data,min_support,min_confidence,tahun,3)
+                finalCheck(association_rules4,data,min_support,min_confidence,tahun,4)
+                
+                insertItem(1,tahun)
+                insertItem(2,tahun)
+                insertItem(3,tahun)
+                insertItem(4,tahun)
                     
-                    if len(association_rules2)>5:
-                        association_rules2,min_support_new,min_confidence_new = checkRules(association_rules2,data2,min_support,min_confidence)
-                        insertSQLRules(association_rules2, 2, min_support_new,min_confidence_new,tahun)  
-                    else:
-                        insertSQLRules(association_rules2, 2, min_support,min_confidence,tahun)
-                    
-                    print("awal :", len(association_rules3))
-                    if len(association_rules3)>5:
-                        association_rules3,min_support_new,min_confidence_new = checkRules(association_rules3,data3,min_support,min_confidence)
-                        insertSQLRules(association_rules3, 3, min_support_new,min_confidence_new,tahun)
-                        print("if more :", len(association_rules3))  
-                    else:
-                        insertSQLRules(association_rules3, 3, min_support,min_confidence,tahun)
-                        print("less :", len(association_rules3))
+                return redirect(url_for('associationResult'))
 
-                    if len(association_rules4)>5:
-                        association_rules4,min_support_new,min_confidence_new = checkRules(association_rules4,data4,min_support,min_confidence)
-                        insertSQLRules(association_rules4, 4, min_support_new,min_confidence_new,tahun)  
-                    else:
-                        insertSQLRules(association_rules1, 4, min_support,min_confidence,tahun)
-
-                    insertItem(1,tahun)
-                    insertItem(2,tahun)
-                    insertItem(3,tahun)
-                    insertItem(4,tahun)
-                    return redirect(url_for('associationResult'))
-                    
-                  
-            else:
-                cluster = dataSelect
-                result = cur.execute("SELECT * FROM penilaian WHERE cluster = %s" ,cluster)
-                if not result:
-                    msg = "Table is empty"
-                    return redirect(url_for('clusteringResult'))
-                else:
-                   
-                    cur.execute("SELECT * FROM penilaian WHERE cluster = %s" ,cluster)
-                    columnNames  = cur.description
-                    dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
-                    data = pd.DataFrame(dataResult)
-
-                    data = processData(data, cluster, column)
-                    association_rules = generateRules(data)
-                    class SetEncoder(json.JSONEncoder):
-                        def default(self, obj):
-                            if isinstance(obj, frozenset):
-                                return list(obj)
-                            return json.JSONEncoder.default(self, obj)
-                    
-                    return render_template('asosiasiData.html',submenu=asosiasiData, details1=list(association_rules),username=session['username'])           
-        return render_template('asosiasiData.html',submenu=asosiasiData)
     else:
         return redirect(url_for('login'))
 
@@ -742,7 +724,109 @@ def delete(id_data):
         return redirect(url_for('datapenilaian'))
     else:
         return redirect(url_for('login'))
+'''
+def donutClusterYear(year):  
+    conn = mysql.connection
+    cur = conn.cursor()   
+    cur.execute("SELECT id,cluster FROM penilaian WHERE tahun = %s",(year))
+    columnNames  = cur.description
+    dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
+    data = pd.DataFrame(dataResult)
 
+    cluster1 = pd.DataFrame(data.loc[data['cluster'] == 1])
+    cluster2 = pd.DataFrame(data.loc[data['cluster'] == 2])
+    cluster3 = pd.DataFrame(data.loc[data['cluster'] == 3])
+    cluster4 = pd.DataFrame(data.loc[data['cluster'] == 4])
+    
+    #counts = {'cluster':[len(cluster1),len(cluster2),len(cluster3),len(cluster4)]}
+    count = [len(cluster1),len(cluster2),len(cluster3),len(cluster4)]
+    
+    class SetEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, frozenset):
+                return list(obj)
+            return json.JSONEncoder.default(self, obj)
+    return count
 
+def linechartYear(year):   
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT id, tahun, cluster, nik, kpiNorm, performanceNorm, competencyNorm, learningNorm, kerjaIbadahNorm, apresiasiNorm, lebihCepatNorm, aktifBersamaNorm FROM penilaian WHERE tahun = %s",(year))
+    columnNames  = cur.description
+    dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
+    data = pd.DataFrame(dataResult)
+
+    cluster1 = pd.DataFrame(data.loc[data['cluster'] == 1])
+    cluster2 = pd.DataFrame(data.loc[data['cluster'] == 2])
+    cluster3 = pd.DataFrame(data.loc[data['cluster'] == 3])
+    cluster4 = pd.DataFrame(data.loc[data['cluster'] == 4])
+    
+    mean1 = cluster1.describe().loc['mean']
+    mean2 = cluster2.describe().loc['mean']
+    mean3 = cluster3.describe().loc['mean']
+    mean4 = cluster4.describe().loc['mean']
+
+    meanList=[]
+    flag=3
+    for i in range(8):        
+        meanList.append(mean1.values[flag])
+        flag+=1
+        
+    flag=3
+    for i in range(8):        
+        meanList.append(mean2.values[flag])
+        flag+=1
+
+    flag=3
+    for i in range(8):        
+        meanList.append(mean3.values[flag])
+        flag+=1
+    flag=3
+    for i in range(8):        
+        meanList.append(mean4.values[flag])
+        flag+=1
+
+    #return mean1,mean2,mean3,mean4
+    return meanList
+        elif request.method == 'POST':
+            year = request.form['eachYear']          
+            conn = mysql.connection
+            cur = conn.cursor() 
+            result = cur.execute("SELECT * FROM penilaian WHERE cluster is NOT NULL AND tahun = %s",(year))
+            userDetails = cur.fetchall()
+            count = donutClusterYear(year)
+            meanList = linechartYear(year)
+
+            return render_template('clustering-result-2022.html', userDetails=userDetails,count=count,meanList=meanList,year= year)
+'''
+'''
+                if len(association_rules1) == 0:
+                    checkIncreaseRules(rules,data,min_support,min_confidence):
+                elif len(association_rules1)>5:
+                    association_rules1,min_support_new,min_confidence_new = checkReduceRules(association_rules1,data1,min_support,min_confidence)
+                    insertSQLRules(association_rules1, 1, min_support_new,min_confidence_new,tahun)  
+                else:
+                    insertSQLRules(association_rules1, 1, min_support,min_confidence,tahun)
+                    
+                if len(association_rules2)>5:
+                    association_rules2,min_support_new,min_confidence_new = checkRules(association_rules2,data2,min_support,min_confidence)
+                    insertSQLRules(association_rules2, 2, min_support_new,min_confidence_new,tahun)  
+                else:
+                    insertSQLRules(association_rules2, 2, min_support,min_confidence,tahun)
+                    
+                print("awal :", len(association_rules3))
+                if len(association_rules3)>5:
+                    association_rules3,min_support_new,min_confidence_new = checkRules(association_rules3,data3,min_support,min_confidence)
+                    insertSQLRules(association_rules3, 3, min_support_new,min_confidence_new,tahun)
+                    print("if more :", len(association_rules3))  
+                else:
+                    insertSQLRules(association_rules3, 3, min_support,min_confidence,tahun)
+                    print("less :", len(association_rules3))
+
+                if len(association_rules4)>5:
+                    association_rules4,min_support_new,min_confidence_new = checkRules(association_rules4,data4,min_support,min_confidence)
+                    insertSQLRules(association_rules4, 4, min_support_new,min_confidence_new,tahun)  
+                else:
+                    insertSQLRules(association_rules1, 4, min_support,min_confidence,tahun)
+'''
 if __name__ == "__main__":
     app.run(debug=True)
