@@ -130,8 +130,7 @@ def insertItem(cluster,tahun):
     data = pd.DataFrame(details,columns =['id','leftHand','rightHand','support','confidence','lift','conviction','minSupp','minConf','cluster','tahun'])
     listCol = []
     colNames = ["kpi","performance","learning","competency","learning","kerjaIbadah","apresiasi","lebihCepat","aktifBersama"]
-    for column in colNames:
-        
+    for column in colNames: 
         for i in data['leftHand']:
             if column in i:
                 if column in listCol:
@@ -156,25 +155,24 @@ def insertItem(cluster,tahun):
 def insertSQLRules(associationRules,cluster,minSupp, minConf,tahun):
     listCol = []
     colNames = ["kpi","performance","learning","competency","learning","kerjaIbadah","apresiasi","lebihCepat","aktifBersama"]
+    
     for row in associationRules:
-        
+       
         left = row[0]
-        
-        print("len ",len(left),"left",left,"cluster",cluster)
         if len(left)>1:
             for i in range(len(left)-1):
                 left = left[i]+ ", " + left[i+1]
             print("left",left)
         
         right = row[1]
-        print("len right",len(right))
+      
         if len(right)>1:
             for i in range(len(right)-1):
                 right= right[i]+ ", " + right[i+1]
-            print("right",right)
-        support = row[5]
-        confidence = row[2]
-        lift = row[3]
+            
+        support = round(row[5],3)
+        confidence = round(row[2],3)
+        lift = round(row[3],3)
         conviction = row[4] 
     
         #print("right",len(right))
@@ -184,12 +182,16 @@ def insertSQLRules(associationRules,cluster,minSupp, minConf,tahun):
         mysql.connection.commit()
     
 def finalCheck(association_rules,data,min_support,min_confidence,tahun,cluster):
+    
     if len(association_rules) == 0:
-        checkIncreaseRules(association_rules,data,min_support,min_confidence)
+        association_rulesnew,min_support_new,min_confidence_new = checkIncreaseRules(association_rules,data,min_support,min_confidence)
+        insertSQLRules(association_rulesnew, cluster, min_support_new,min_confidence_new,tahun)
+    
     
     if len(association_rules)>5:
-        association_rules,min_support_new,min_confidence_new = checkReduceRules(association_rules,data,min_support,min_confidence)
-        insertSQLRules(association_rules, cluster, min_support_new,min_confidence_new,tahun)  
+        association_rulesnew,min_support_new,min_confidence_new = checkReduceRules(association_rules,data,min_support,min_confidence)
+        insertSQLRules(association_rulesnew, cluster, min_support_new,min_confidence_new,tahun)  
+
     else:
         insertSQLRules(association_rules, cluster, min_support,min_confidence,tahun)      
 
@@ -457,6 +459,42 @@ def clusterProcess():
 
 #Create route to clustering result to show clustering result from database
 
+def donutClusterYear(year):  
+    conn = mysql.connection
+    cur = conn.cursor()   
+    cur.execute("SELECT id, count, cluster, tahun FROM statistic WHERE tahun = %s",(year))
+    columnNames  = cur.description
+    dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
+    data = pd.DataFrame(dataResult)
+
+    count = data['count'].tolist()
+    cluster1 = pd.DataFrame(data.loc[data['cluster'] == 1])
+    cluster2 = pd.DataFrame(data.loc[data['cluster'] == 2])
+    cluster3 = pd.DataFrame(data.loc[data['cluster'] == 3])
+    cluster4 = pd.DataFrame(data.loc[data['cluster'] == 4])
+    
+    return count
+@app.route("/linechartYear", methods=['GET','POST'])
+def linechartYear(year):   
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT id, cluster, kpiMean, performanceMean, competencyMean, learningMean, kerjaIbadahMean, apresiasiMean, lebihCepatMean, aktifBersamaMean FROM statistic WHERE tahun = %s",(year))
+    columnNames  = cur.description
+    dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
+    data = pd.DataFrame(dataResult)
+
+    cluster1 = pd.DataFrame(data.loc[data['cluster'] == 1])
+    cluster2 = pd.DataFrame(data.loc[data['cluster'] == 2])
+    cluster3 = pd.DataFrame(data.loc[data['cluster'] == 3])
+    cluster4 = pd.DataFrame(data.loc[data['cluster'] == 4])
+    column = ['kpiMean', 'performanceMean', 'competencyMean', 'learningMean', 'kerjaIbadahMean', 'apresiasiMean', 'lebihCepatMean', 'aktifBersamaMean']
+
+    meanList = []
+    for i in column:
+        
+        meanList.append(data[i].tolist())
+    
+    #return mean1,mean2,mean3,mean4
+    return meanList
 @app.route("/clusteringResult", methods=['GET','POST'])
 def clusteringResult():
     if 'loggedin' in session:   
@@ -474,12 +512,13 @@ def clusteringResult():
             return redirect(url_for('normalisasiResult'))
         
         else:
-            count = donutCluster()
-            meanList = linechart()
-            return render_template('clustering-result.html', userDetails=userDetails,count=count,meanList=meanList)
-        
-        
-        
+            count2022 = donutClusterYear(2022)
+            count2023 = donutClusterYear(2023)
+   
+            meanList2022 = linechartYear(2022)
+            meanList2023 = linechartYear(2023)
+            return render_template('clustering-result.html', meanList2022 = meanList2022, userDetails=userDetails,count2022=count2022,meanList2023 = meanList2023, count2023 = count2023)
+
     else:
         return redirect(url_for('login'))
 
@@ -544,11 +583,12 @@ def associationProcess():
                 association_rules4,freq_item_support1 = generateRules(data4,min_support,min_confidence)
                 tahun = data['tahun']
                 tahun = tahun[0]
-
-                finalCheck(association_rules1,data,min_support,min_confidence,tahun,1)
-                finalCheck(association_rules2,data,min_support,min_confidence,tahun,2)
-                finalCheck(association_rules3,data,min_support,min_confidence,tahun,3)
-                finalCheck(association_rules4,data,min_support,min_confidence,tahun,4)
+                
+                finalCheck(association_rules1,data1,min_support,min_confidence,tahun,1)
+                finalCheck(association_rules2,data2,min_support,min_confidence,tahun,2)
+                finalCheck(association_rules3,data3,min_support,min_confidence,tahun,3)              
+                finalCheck(association_rules4,data4,min_support,min_confidence,tahun,4)
+                
                 
                 insertItem(1,tahun)
                 insertItem(2,tahun)
@@ -577,7 +617,7 @@ def associationResult():
             data = pd.DataFrame(details,columns =['id','leftHand','rightHand','support','confidence','lift','conviction','minSupp','minConf','cluster','tahun'])
             
             cluster1 = data[data['cluster'] == 1]
-            cluster2 =data[data['cluster'] == 2]
+            cluster2 = data[data['cluster'] == 2]
             cluster3 = data[data['cluster'] == 3]
             cluster4 = data[data['cluster'] == 4]
 
@@ -612,7 +652,7 @@ def associationResult():
 def viewPCA():  
     conn = mysql.connection
     cur = conn.cursor()   
-    cur.execute("SELECT * FROM penilaian")
+    cur.execute("SELECT * FROM penilaian WHERE tahun = 2022")
     columnNames  = cur.description
     dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
     data = pd.DataFrame(dataResult)
@@ -630,29 +670,6 @@ def viewPCA():
     json_list= json.dumps(parsed, indent=4)  
     return json_list
 
-@app.route("/donutCluster")
-def donutCluster():  
-    conn = mysql.connection
-    cur = conn.cursor()   
-    cur.execute("SELECT * FROM penilaian")
-    columnNames  = cur.description
-    dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
-    data = pd.DataFrame(dataResult)
-
-    cluster1 = pd.DataFrame(data.loc[data['cluster'] == 1])
-    cluster2 = pd.DataFrame(data.loc[data['cluster'] == 2])
-    cluster3 = pd.DataFrame(data.loc[data['cluster'] == 3])
-    cluster4 = pd.DataFrame(data.loc[data['cluster'] == 4])
-    
-    #counts = {'cluster':[len(cluster1),len(cluster2),len(cluster3),len(cluster4)]}
-    count = [len(cluster1),len(cluster2),len(cluster3),len(cluster4)]
-    
-    class SetEncoder(json.JSONEncoder):
-        def default(self, obj):
-            if isinstance(obj, frozenset):
-                return list(obj)
-            return json.JSONEncoder.default(self, obj)
-    return count
 
 @app.route("/linechart")
 def linechart():   
@@ -724,11 +741,14 @@ def delete(id_data):
         return redirect(url_for('datapenilaian'))
     else:
         return redirect(url_for('login'))
+
+
 '''
-def donutClusterYear(year):  
+@app.route("/donutCluster")
+def donutCluster():  
     conn = mysql.connection
     cur = conn.cursor()   
-    cur.execute("SELECT id,cluster FROM penilaian WHERE tahun = %s",(year))
+    cur.execute("SELECT * FROM penilaian")
     columnNames  = cur.description
     dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
     data = pd.DataFrame(dataResult)
@@ -787,6 +807,8 @@ def linechartYear(year):
 
     #return mean1,mean2,mean3,mean4
     return meanList
+
+  
         elif request.method == 'POST':
             year = request.form['eachYear']          
             conn = mysql.connection
@@ -797,8 +819,8 @@ def linechartYear(year):
             meanList = linechartYear(year)
 
             return render_template('clustering-result-2022.html', userDetails=userDetails,count=count,meanList=meanList,year= year)
-'''
-'''
+
+
                 if len(association_rules1) == 0:
                     checkIncreaseRules(rules,data,min_support,min_confidence):
                 elif len(association_rules1)>5:

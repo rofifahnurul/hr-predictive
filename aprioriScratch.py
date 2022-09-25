@@ -129,7 +129,7 @@ def compute_conf(freq_items, item_support_dict, freq_set, subsets, min_confidenc
             if conv_b == 0:
               conv = "infinity"
             else:
-              conv = conv_a/conv_b
+              conv = round((conv_a/conv_b),3)
             rules_info = lhs, rhs, conf, lift,conv, item_support_dict[freq_set]
             rules.append(rules_info)
             right_hand_side.append(rhs)
@@ -142,25 +142,20 @@ def generateRules(data,min_support, min_confidence):
     freq_items, item_support_dict,freq_item_support = aprioriFunc(records, min_support)
     association_rules= create_rules(freq_items, item_support_dict, min_confidence)
     #len_right = create_rules(freq_items, item_support_dict, min_confidence = 0.8)
+    
     return association_rules,freq_item_support
 
 def checkReduceRules(rules, data, min_support,min_confidence):
     while len(rules) > 5:                           
         min_support = min_support + 0.025
         rules,freq_item_support = generateRules(data, min_support, min_confidence)
-        print(len(rules),min_support)
-
+       
         if min_support >= 0.85 and len(rules) > 5:
             min_confidence = min_confidence +0.01
             rules,freq_item_support = generateRules(data, min_support, min_confidence)
-            print("kondisi1 ",len(rules),min_support)
-
             if len(rules) <= 5 or min_support >=0.85:
-                print("kondisi2",len(rules),min_support)
                 break;
-
-            if min_support >=0.85 and min_confidence >0.99 and len(rules) > 5:
-                print("kondisi3",len(rules),min_support)
+            if min_support >=0.85 and min_confidence >0.99 and len(rules) > 5:             
                 break;
     
     return rules, min_support,min_confidence
