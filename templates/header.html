@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Sistem Penilaian</title>
     <link rel="stylesheet" href="https://adminlte.io/themes/v3/plugins/daterangepicker/daterangepicker.css">
+  
     <!-- Google Font: Source Sans Pro -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
     <!-- Font Awesome -->
@@ -64,7 +65,7 @@
         <!-- /.navbar -->
 
         <!-- Main Sidebar Container -->
-        <aside class="main-sidebar sidebar-dark-primary elevation-4">
+        <aside class="main-sidebar sidebar-light-teal elevation-4">
             <!-- Brand Logo -->
             <a href="index3.html" class="brand-link">
 
@@ -82,82 +83,46 @@
                         <a href="#" class="d-block">{{username}}</a>
                     </div>
 
-
-                </div>
-
-
-                <!-- SidebarSearch Form -->
-                <div class="form-inline">
-                    <div class="input-group" data-widget="sidebar-search">
-                        <input class="form-control form-control-sidebar" type="search" placeholder="Search" aria-label="Search">
-                        <div class="input-group-append">
-                            <button class="btn btn-sidebar">
-              <i class="fas fa-search fa-fw"></i>
-            </button>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Sidebar Menu -->
                 <nav class="mt-2">
-                    <div class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-                        <!-- Add icons to the links using the .nav-icon class
-               with font-awesome or any other icon font library -->
-
-
-                        <li class="nav-item has-treeview {% if menu=='data' %} menu-open {% endif %}">
-                            <a href="#" class="nav-link">
-                                <i class="nav-icon fas fa-copy"></i>
-                                <p>
-                                    Master Data
-                                    <i class="fas fa-angle-left right"></i>
-
-                                </p>
-                            </a>
-
-                            <ul class="nav nav-treeview">
+                   
+                    <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                                      
                                 <li class="nav-item">
-                                    <a href="/datapenilaian" class="nav-link {% if submenu=='datapenilaian' %} active{% endif %}">
+                                    <a href="/datapenilaian" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Data Penilaian</p>
                                     </a>
                                 </li>
-                            </ul>
-
-                            <ul class="nav nav-treeview">
+                        
+                          
                                 <li class="nav-item">
-                                    <a href="/normalisasiResult" class="nav-link {% if submenu=='normalisasi' %} active{% endif %}">
+                                    <a href="/normalisasiResult" class="nav-link ">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Data Normalisasi</p>
                                     </a>
                                 </li>
-                            </ul>
-                            <ul class="nav nav-treeview">
+                    
                                 <li class="nav-item">
-                                    <a href="/clusteringResult" class="nav-link {% if submenu=='clusteringResult' %} active{% endif %}">
+                                    <a href="/clusteringResult" class="nav-link ">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Clustering Result</p>
                                     </a>
                                 </li>
-                            </ul>
-                            <!-- 
-                            <ul class="nav nav-treeview">
+                      
+                       
+              
                                 <li class="nav-item">
-                                    <a href="/asosiasi" class="nav-link {% if submenu=='asosiasi' %} active{% endif %}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Asosiasi</p>
-                                    </a>
-                                </li>
-                            </ul>-->
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="/associationResult" class="nav-link {% if submenu=='associationResult' %} active{% endif %}">
+                                    <a href="/associationResult" class="nav-link ">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Asosiasi Result</p>
                                     </a>
                                 </li>
-                            </ul>
-                        </li>
+                          
+                        </ul>
+                      
 
 
 

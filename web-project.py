@@ -170,9 +170,9 @@ def insertSQLRules(associationRules,cluster,minSupp, minConf,tahun):
             for i in range(len(right)-1):
                 right= right[i]+ ", " + right[i+1]
             
-        support = round(row[5],3)
-        confidence = round(row[2],3)
-        lift = round(row[3],3)
+        support = row[5]
+        confidence = row[2]
+        lift = row[3]
         conviction = row[4] 
     
         #print("right",len(right))
@@ -512,13 +512,18 @@ def clusteringResult():
             return redirect(url_for('normalisasiResult'))
         
         else:
-            count2022 = donutClusterYear(2022)
-            count2023 = donutClusterYear(2023)
+            data = pd.DataFrame(userDetails,columns =['id','nik','kpi','performance','competency','learning','kerjaIbadah','apresiasi','lebihCepat','aktifBersama','cluster','tahun','kpiNorm','performanceNorm','competencyNorm','learningNorm','kerjaIbadahNorm','apresiasiNorm','lebihCepatNorm','aktifBersamaNorm'])
+            if data['tahun'].nunique() > 1:
+                count2022 = donutClusterYear(2022)
+                count2023 = donutClusterYear(2023)
    
-            meanList2022 = linechartYear(2022)
-            meanList2023 = linechartYear(2023)
-            return render_template('clustering-result.html', meanList2022 = meanList2022, userDetails=userDetails,count2022=count2022,meanList2023 = meanList2023, count2023 = count2023)
-
+                meanList2022 = linechartYear(2022)
+                meanList2023 = linechartYear(2023)
+                return render_template('clustering-result.html', meanList2022 = meanList2022, userDetails=userDetails,count2022=count2022,meanList2023 = meanList2023, count2023 = count2023)
+            else:
+                count2022 = donutClusterYear(2022)
+                meanList2022 = linechartYear(2022)
+                return render_template('clustering-result.html', meanList2022 = meanList2022, userDetails=userDetails,count2022=count2022)
     else:
         return redirect(url_for('login'))
 
@@ -615,35 +620,93 @@ def associationResult():
             return render_template('normalisasiResult.html')
         else:
             data = pd.DataFrame(details,columns =['id','leftHand','rightHand','support','confidence','lift','conviction','minSupp','minConf','cluster','tahun'])
-            
-            cluster1 = data[data['cluster'] == 1]
-            cluster2 = data[data['cluster'] == 2]
-            cluster3 = data[data['cluster'] == 3]
-            cluster4 = data[data['cluster'] == 4]
 
-            count = [len(cluster1),len(cluster2),len(cluster3),len(cluster4)]
+            if data['tahun'].nunique() > 1 :
+             
+                cluster1 = data[(data['cluster'] == 1) & (data['tahun'] == 2022)]
+                cluster2 = data[(data['cluster'] == 2) & (data['tahun'] == 2022)]
+                cluster3 = data[(data['cluster'] == 3) & (data['tahun'] == 2022)]
+                cluster4 = data[(data['cluster'] == 4) & (data['tahun'] == 2022)]
 
-            cur = conn.cursor()
-            cur.execute("SELECT * FROM itemAssociation")
-            items = cur.fetchall()
-            dataItem = pd.DataFrame(items,columns =['id','item','cluster','tahun'])
+                count = [len(cluster1),len(cluster2),len(cluster3),len(cluster4)]
 
-            listItem1 = []
-            listItem2 = []
-            listItem3 = []
-            listItem4 = []
-            for index,row in dataItem.iterrows():
-                if row['cluster'] == 1:
-                    listItem1.append(row)
-                if row['cluster'] == 2:
-                    listItem2.append(row)
-                if row['cluster'] == 3:
-                    listItem3.append(row)
-                if row['cluster'] == 4:
-                    listItem4.append(row)
-            print(items)
-            #return "succces"
-            return render_template('associationResult.html',submenu=associationResult,details = details, count = count,listItem1 = listItem1,listItem2 = listItem2, listItem3 = listItem3, listItem4 = listItem4, username=session['username'])
+                cluster1_23 = data[(data['cluster'] == 1) & (data['tahun'] == 2023)]
+                cluster2_23 = data[(data['cluster'] == 2) & (data['tahun'] == 2023)]
+                cluster3_23 = data[(data['cluster'] == 3) & (data['tahun'] == 2023)]
+                cluster4_23 = data[(data['cluster'] == 4) & (data['tahun'] == 2023)]
+
+                count_23 = [len(cluster1_23),len(cluster2_23),len(cluster3_23),len(cluster4_23)]
+
+
+                cur = conn.cursor()
+                cur.execute("SELECT * FROM itemAssociation")
+                items = cur.fetchall()
+                dataItem = pd.DataFrame(items,columns =['id','item','cluster','tahun'])
+
+                listItem1 = []
+                listItem2 = []
+                listItem3 = []
+                listItem4 = []
+
+                listItem1_23 = []
+                listItem2_23 = []
+                listItem3_23 = []
+                listItem4_23 = []
+                for index,row in dataItem.iterrows():
+                    if (row['cluster'] == 1) & (row['tahun']==2022) :
+                        listItem1.append(row)
+                    elif (row['cluster'] == 2) & (row['tahun']==2022) :
+                        listItem2.append(row)
+                    elif (row['cluster'] == 3) & (row['tahun']==2022) :
+                        listItem3.append(row)
+                    elif (row['cluster'] == 4) & (row['tahun']==2022) :
+                        listItem4.append(row)
+                    elif (row['cluster'] == 1) & (row['tahun']==2023) :
+                        listItem1_23.append(row)
+                    elif (row['cluster'] == 2) & (row['tahun']==2023) :
+                        listItem2_23.append(row)
+                    elif (row['cluster'] == 3) & (row['tahun']==2023) :
+                        listItem3_23.append(row)
+                    elif (row['cluster'] == 4) & (row['tahun']==2023) :
+                        listItem4_23.append(row)
+
+                print(items)
+                #return "succces"
+                return render_template('associationResult.html',submenu=associationResult,details = details, count = count, count_23 = count_23, 
+                listItem1 = listItem1,listItem2 = listItem2, listItem3 = listItem3, listItem4 = listItem4,
+                listItem1_23 = listItem1_23,listItem2_23 = listItem2_23,
+                listItem3_23 = listItem3_23,
+                listItem4_23=listItem4_23, username=session['username'])
+            else:
+                cluster1 = data[data['cluster'] == 1 ]
+                cluster2 = data[data['cluster'] == 2 ]
+                cluster3 = data[data['cluster'] == 3 ]
+                cluster4 = data[data['cluster'] == 4 ]
+
+                count = [len(cluster1),len(cluster2),len(cluster3),len(cluster4)]
+
+        
+                cur = conn.cursor()
+                cur.execute("SELECT * FROM itemAssociation")
+                items = cur.fetchall()
+                dataItem = pd.DataFrame(items,columns =['id','item','cluster','tahun'])
+
+                listItem1 = []
+                listItem2 = []
+                listItem3 = []
+                listItem4 = []
+
+                for index,row in dataItem.iterrows():
+                    if row['cluster'] == 1 and row['tahun']==2022 :
+                        listItem1.append(row)
+                    elif row['cluster'] == 2 and row['tahun']==2022 :
+                        listItem2.append(row)
+                    elif row['cluster'] == 3 and row['tahun']==2022 :
+                        listItem3.append(row)
+                    elif row['cluster'] == 4 and row['tahun']==2022 :
+                        listItem4.append(row)
+                return render_template('associationResult.html',submenu=associationResult,details = details, count = count,listItem1 = listItem1,listItem2 = listItem2,listItem3 = listItem3, listItem4 = listItem4, username=session['username'])
+                
     else:
         return redirect(url_for('login'))
 

@@ -116,15 +116,125 @@
             </div>
         </div>
         <!-- End Modal-->
-
         
-            <h5 class="mb-2 mt-4">Variabel yang berpengaruh di tiap cluster</h5>
+
+        <!-- Modal -->
+        <div id="variabel1_23" class="modal fade" role="dialog">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+                    <div class="modal-body">                 
+                            <div class='card-body'>
+                                <div class="card card-info">
+                                    <div class="card-header">
+                                        <h3 class="card-title">Variabel yang berpengaruh adalah   </h3>
+                                        {% if listItem1_23 is defined and listItem1_23|length %}
+                                        {%for i in listItem1%}
+                                        <h3 class="card-title"> 	&nbsp; {{i[1]}}</h3>
+                                        {%endfor%}
+                                        {%endif%}
+                                    </div>
+                                   
+                                </div>
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End Modal-->
+
+        <!-- Modal -->
+        <div id="variabel2_23" class="modal fade" role="dialog">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+                    <div class="modal-body">                 
+                            <div class='card-body'>
+                                <div class="card card-info">
+                                    <div class="card-header">
+                                        <h3 class="card-title">Variabel yang berpengaruh adalah </h3>
+                                        {% if listItem2_23 is defined and listItem2_23|length %}
+                                        {%for i in listItem2%}
+                                        <h3 class="card-title"> 	&nbsp;{{i[1]}}</h3>
+                                        {%endfor%}
+                                        {%endif%}
+                                    </div>
+                                   
+                                </div>
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End Modal-->
+        <!-- Modal -->
+        <div id="variabel3_23" class="modal fade" role="dialog">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+                    <div class="modal-body">                 
+                            <div class='card-body'>
+                                <div class="card card-info">
+                                    <div class="card-header">
+                                        <h3 class="card-title">Variabel yang berpengaruh adalah </h3>
+                                        {% if listItem3_23 is defined and listItem3_23|length %}
+                                        {%for i in listItem3%}
+                                        
+                                        <h3 class="card-title">	&nbsp; {{i[1]}}</h3>
+                                        {%endfor%}
+                                        {%endif%}
+                                    </div>
+                                   
+                                </div>
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End Modal-->
+
+        <!-- Modal -->
+        <div id="variabel4_23" class="modal fade" role="dialog">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+                    <div class="modal-body">                 
+                            <div class='card-body'>
+                                <div class="card card-info">
+                                    <div class="card-header">
+                                        <h3 class="card-title">Variabel yang berpengaruh adalah </h3>
+                                        {% if listItem4_23 is defined and listItem4_23|length %}
+                                        {%for i in listItem4%}
+                                        
+                                        <h3 class="card-title">	&nbsp; dan {{i[1]}}</h3>
+                                        {%endfor%}
+                                        {%endif%}
+                                    </div>
+                                   
+                                </div>
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End Modal-->
+        
+        
+            <h5 class="mb-2 mt-4">Variabel yang berpengaruh di tiap cluster (2022)</h5>
             <div class="row">
                 {% for i in count %}
                 <!-- ./col -->
                 <div class="col-lg-3 col-6">
                 <!-- small card -->
-                <div class="small-box bg-success">
+                <div class="small-box bg-maroon">
                 <div class="inner">
                     <h3>{{i}}<sup style="font-size: 20px"></sup></h3>
                     <p>Rules</p>
@@ -161,16 +271,65 @@
           <!-- ./col -->
           {%endfor%}
         </div>
+            {% if count_23 is defined and count_23|length %}
+            <h5 class="mb-2 mt-4">Variabel yang berpengaruh di tiap cluster (2023)</h5>
+            <div class="row">
+                {% for i in count_23 %}
+                <!-- ./col -->
+                <div class="col-lg-3 col-6">
+                <!-- small card -->
+                <div class="small-box bg-olive">
+                <div class="inner">
+                    <h3>{{i}}<sup style="font-size: 20px"></sup></h3>
+                    <p>Rules</p>
+                </div>
+                <div class="icon">
+                    <i class="ion ion-stats-bars"></i>
+                </div>
+                    {%if loop.index == 1%}
+                        <a href="#variabel1_23" class="small-box-footer" data-toggle="modal" data-target="#variabel1">
+                            Check the rules<i class="fas fa-arrow-circle-right"></i>
+                        </a>
+                    {%endif%}
+
+                    {%if loop.index == 2%}
+                        <a href="#variabel2_23" class="small-box-footer" data-toggle="modal" data-target="#variabel2">
+                        Check the rules<i class="fas fa-arrow-circle-right"></i>
+                        </a>
+                    {%endif%}
+
+                    {%if loop.index == 3%}
+                        <a href="#variabel3_23" class="small-box-footer" data-toggle="modal" data-target="#variabel3">
+                        Check the rules<i class="fas fa-arrow-circle-right"></i>
+                        </a>
+                    {%endif%}
+
+                    {%if loop.index == 4%}
+                        <a href="#variabel4_23" class="small-box-footer" data-toggle="modal" data-target="#variabel4">
+                        Check the rules<i class="fas fa-arrow-circle-right"></i>
+                        </a>
+                    {%endif%}
+                </div>
+            </div>
+            
+            {% else %}
+            <div>
+
+            </div>
+            {%endfor%}
+        </div>
+            {%endif%}
+            
             <div class="card card-dark">
                 <div class="card-header">
                     <h3 class="card-title">Cluster </h3>
                 </div>
                 <!-- /.card-header -->
                 <div class="card-body">
-                    <table id="association"class="table table-striped table-hover">
+                    <table id="association"class="table table-striped table-hover display responsive nowrap" style="width:100%">
                     <thead>
                         <tr>
-                            
+                            <th>Tahun</th>
                             <th style="width: 10px;">Cluster</th>
                             <th style="width: 10px;">Min Support </th>
                             <th>Min Confidence</th>
@@ -188,6 +347,7 @@
                     <tbody>
                         {% for detail in details %}
                         <tr>
+                            <td>{{ detail[10] }}</td>
                             <td>{{ detail[9] }}</td>
                             <td>{{ detail[7] }}</td>
                             <td>{{ detail[8] }}</td>
