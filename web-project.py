@@ -2,7 +2,7 @@ from concurrent.futures import process
 import re
 import pymysql
 pymysql.install_as_MySQLdb()
-from flask import Flask, render_template, request, redirect, url_for,session
+from flask import Flask, render_template, request, redirect, url_for,session, send_file
 #from flask_mysql_connector import MySQL
 from flask_mysqldb import MySQL
 from cluster_process import * 
@@ -35,6 +35,11 @@ app.config['SESSION_TYPE'] = 'memcached'
 app.config['SECRET_KEY'] = 'super secret key'
 
 mysql = MySQL(app)
+
+@app.route('/download_file')
+def download_file():
+    p = "Template.xlsx"
+    return send_file(p,as_attachment=True)
 
 def kmeansScratch(K,data_numeric, Centroids,data):
     columnC = Centroids.columns
@@ -160,16 +165,16 @@ def insertSQLRules(associationRules,cluster,minSupp, minConf,tahun):
        
         left = row[0]
         if len(left)>1:
-            for i in range(len(left)-1):
-                left = left[i]+ ", " + left[i+1]
+            y = list(left)
+            for i in range(len(y)-1):
+                 left = str(y[i])+ "," + str(y[i+1])
             print("left",left)
         
         right = row[1]
-      
         if len(right)>1:
-            for i in range(len(right)-1):
-                right= right[i]+ ", " + right[i+1]
-            
+            x = list(right)
+            for i in range(len(x)-1):
+                 left = str(y[i])+ "," + str(x[i+1])         
         support = row[5]
         confidence = row[2]
         lift = row[3]
@@ -258,7 +263,6 @@ def logout():
         # Redirect to login page
     return redirect(url_for('login'))
 
-#Create function to convert/process dataset for association
 
 #Create route for main page
 @app.route("/")
@@ -332,6 +336,63 @@ def uploadFile():
         return redirect(url_for('datapenilaian'))
     else:
         return redirect(url_for('login'))
+
+@app.route("/uploadFileData", methods=['GET','POST'])
+def uploadFileData():
+    if 'loggedin' in session: 
+        status = 0
+
+        if request.method == 'POST':
+
+            if request.files:
+                file = request.files["file"]           
+                msg="File already saved"
+                ext = file.filename.rsplit('.', 1)[1].lower()
+                acceptedExt = ['csv','xls','xlsx']
+                if ext in acceptedExt:
+                    file.save(os.path.join(app.config['UPLOAD_FOLDER'],file.filename))
+                    status = 1
+                #return file.filename.rsplit('.', 1)[0]
+            
+        if status == 1:
+            path = "/Users/agussuyono/documents/hr-predictive/file/"+(file.filename)
+            if ext == "csv":
+                data = pd.read_csv(path)
+            else:
+                data = pd.read_excel(path)
+            
+            data = data.drop_duplicates(subset=['NIK'],keep='first')
+            data = data.dropna()
+            column = data.columns
+            for index,row in data.iterrows():                      
+                nik = int(row['NIK'])
+                businessUnit= row['BUSINESS_UNIT']
+                jobLevel = row['JOB_LEVEL']
+                location = row['LOCATION']
+                department = row['DEPARTMENT']
+                jobPosition = row['JOB_POSITION']
+                cur = mysql.connection.cursor()
+                cur.execute("INSERT INTO dataKaryawan(nik,businessUnit, jobLevel, location, department, jobPosition) VALUES(%s,%s,%s,%s,%s,%s)",(nik, businessUnit, jobLevel, location,department, jobPosition))
+                mysql.connection.commit()
+                
+            return "ok"
+
+        return redirect(url_for('dataKaryawan'))
+    else:
+        return redirect(url_for('login'))
+
+@app.route("/dataKaryawan", methods=['GET','POST'])
+def dataKaryawan():
+    if 'loggedin' in session:   
+        cur = mysql.connection.cursor()
+        result = cur.execute("SELECT * FROM dataKaryawan ")
+        userDetails = cur.fetchall()
+        print(result)
+        return render_template('dataKaryawan.html', userDetails=userDetails,username=session['username'])
+
+    else:
+        return redirect(url_for('login'))
+
 @app.route("/normalisasi", methods=['GET','POST'])
 def normalisasi():
     if 'loggedin' in session:
@@ -407,8 +468,9 @@ def normalisasiResult():
 @app.route("/clusterProcess", methods=['GET','POST'])
 def clusterProcess():
     if 'loggedin' in session: 
-        if request.method == 'POST':
+        if request.method == 'POST' and 'k' in request.form :
             dataSelect = request.form['dataSelect']
+            k = request.form['k']
             conn = mysql.connection
             cur = conn.cursor()   
 
@@ -431,7 +493,7 @@ def clusterProcess():
                 data = pd.DataFrame(dataResult)
                 data_numeric = data.iloc[:,2:10]
                     
-                K=4
+                K=int(k)
                 Centroids = data_numeric.sample(n=K)
                 tes = data_numeric.sample(n=K)
                     
@@ -534,16 +596,16 @@ def clusteringResult():
 def associationProcess():
     if 'loggedin' in session: 
         #make connection and sql query
-        if request.method == 'POST':
+        if request.method == 'POST' and 'minSupp' in request.form and 'minConf' in request.form:
             dataSelect = request.form['dataSelect']
+            min_support = float(request.form['minSupp'])
+            min_confidence = float(request.form['minConf'])
+
             conn = mysql.connection
             cur = conn.cursor()   
-
-            if dataSelect == "Semua data":
-                result = cur.execute("SELECT * FROM penilaian")
-            else:
-                year = dataSelect
-                result = cur.execute("SELECT id, nik, kpiNorm, performanceNorm, competencyNorm, learningNorm, kerjaIbadahNorm, apresiasiNorm, lebihCepatNorm, aktifBersamaNorm, tahun, cluster FROM penilaian WHERE tahun = %s",(year))
+         
+            year = dataSelect
+            result = cur.execute("SELECT id, nik, kpiNorm, performanceNorm, competencyNorm, learningNorm, kerjaIbadahNorm, apresiasiNorm, lebihCepatNorm, aktifBersamaNorm, tahun, cluster FROM penilaian WHERE tahun = %s",(year))
             
             if not result:
                 msg = "Table is empty"
@@ -579,8 +641,6 @@ def associationProcess():
                     create_check(cluster4,column[i],data4)
 
                 status = 0
-                min_support = 0.55
-                min_confidence = 0.9
 
                 association_rules1,freq_item_support1 = generateRules(data1,min_support,min_confidence)    
                 association_rules2,freq_item_support1 = generateRules(data2,min_support,min_confidence)    
@@ -721,14 +781,14 @@ def viewPCA():
     data = pd.DataFrame(dataResult)
     data_numeric = data.iloc[:,2:10]
     data_cluster = data.iloc[:,10]
-    xPCA = compPCA(data_numeric,data_cluster)
+    xPCA,tesPCA = compPCA(data_numeric,data_cluster)
     class SetEncoder(json.JSONEncoder):
         def default(self, obj):
             if isinstance(obj, frozenset):
                 return list(obj)
             return json.JSONEncoder.default(self, obj)
     #json_list = json.loads(json.dumps(list(xPCA.T.to_dict().values())))
-    result = xPCA.to_json(orient="records")
+    result = tesPCA.to_json(orient="records")
     parsed = json.loads(result)
     json_list= json.dumps(parsed, indent=4)  
     return json_list
@@ -778,6 +838,19 @@ def linechart():
     else:
         return redirect(url_for('login'))
 
+@app.route('/notdash')
+def notdash():
+   df = pd.DataFrame({
+      'Fruit': ['Apples', 'Oranges', 'Bananas', 'Apples', 'Oranges', 
+      'Bananas'],
+      'Amount': [4, 1, 2, 2, 4, 5],
+      'City': ['SF', 'SF', 'SF', 'Montreal', 'Montreal', 'Montreal']
+   })
+   fig = px.bar(df, x='Fruit', y='Amount', color='City', 
+      barmode='group')
+   graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+   return render_template('notdash.html', graphJSON=graphJSON)
+
 
 @app.route('/insert', methods = ['POST'])
 def insert():
@@ -806,112 +879,5 @@ def delete(id_data):
         return redirect(url_for('login'))
 
 
-'''
-@app.route("/donutCluster")
-def donutCluster():  
-    conn = mysql.connection
-    cur = conn.cursor()   
-    cur.execute("SELECT * FROM penilaian")
-    columnNames  = cur.description
-    dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
-    data = pd.DataFrame(dataResult)
-
-    cluster1 = pd.DataFrame(data.loc[data['cluster'] == 1])
-    cluster2 = pd.DataFrame(data.loc[data['cluster'] == 2])
-    cluster3 = pd.DataFrame(data.loc[data['cluster'] == 3])
-    cluster4 = pd.DataFrame(data.loc[data['cluster'] == 4])
-    
-    #counts = {'cluster':[len(cluster1),len(cluster2),len(cluster3),len(cluster4)]}
-    count = [len(cluster1),len(cluster2),len(cluster3),len(cluster4)]
-    
-    class SetEncoder(json.JSONEncoder):
-        def default(self, obj):
-            if isinstance(obj, frozenset):
-                return list(obj)
-            return json.JSONEncoder.default(self, obj)
-    return count
-
-def linechartYear(year):   
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT id, tahun, cluster, nik, kpiNorm, performanceNorm, competencyNorm, learningNorm, kerjaIbadahNorm, apresiasiNorm, lebihCepatNorm, aktifBersamaNorm FROM penilaian WHERE tahun = %s",(year))
-    columnNames  = cur.description
-    dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
-    data = pd.DataFrame(dataResult)
-
-    cluster1 = pd.DataFrame(data.loc[data['cluster'] == 1])
-    cluster2 = pd.DataFrame(data.loc[data['cluster'] == 2])
-    cluster3 = pd.DataFrame(data.loc[data['cluster'] == 3])
-    cluster4 = pd.DataFrame(data.loc[data['cluster'] == 4])
-    
-    mean1 = cluster1.describe().loc['mean']
-    mean2 = cluster2.describe().loc['mean']
-    mean3 = cluster3.describe().loc['mean']
-    mean4 = cluster4.describe().loc['mean']
-
-    meanList=[]
-    flag=3
-    for i in range(8):        
-        meanList.append(mean1.values[flag])
-        flag+=1
-        
-    flag=3
-    for i in range(8):        
-        meanList.append(mean2.values[flag])
-        flag+=1
-
-    flag=3
-    for i in range(8):        
-        meanList.append(mean3.values[flag])
-        flag+=1
-    flag=3
-    for i in range(8):        
-        meanList.append(mean4.values[flag])
-        flag+=1
-
-    #return mean1,mean2,mean3,mean4
-    return meanList
-
-  
-        elif request.method == 'POST':
-            year = request.form['eachYear']          
-            conn = mysql.connection
-            cur = conn.cursor() 
-            result = cur.execute("SELECT * FROM penilaian WHERE cluster is NOT NULL AND tahun = %s",(year))
-            userDetails = cur.fetchall()
-            count = donutClusterYear(year)
-            meanList = linechartYear(year)
-
-            return render_template('clustering-result-2022.html', userDetails=userDetails,count=count,meanList=meanList,year= year)
-
-
-                if len(association_rules1) == 0:
-                    checkIncreaseRules(rules,data,min_support,min_confidence):
-                elif len(association_rules1)>5:
-                    association_rules1,min_support_new,min_confidence_new = checkReduceRules(association_rules1,data1,min_support,min_confidence)
-                    insertSQLRules(association_rules1, 1, min_support_new,min_confidence_new,tahun)  
-                else:
-                    insertSQLRules(association_rules1, 1, min_support,min_confidence,tahun)
-                    
-                if len(association_rules2)>5:
-                    association_rules2,min_support_new,min_confidence_new = checkRules(association_rules2,data2,min_support,min_confidence)
-                    insertSQLRules(association_rules2, 2, min_support_new,min_confidence_new,tahun)  
-                else:
-                    insertSQLRules(association_rules2, 2, min_support,min_confidence,tahun)
-                    
-                print("awal :", len(association_rules3))
-                if len(association_rules3)>5:
-                    association_rules3,min_support_new,min_confidence_new = checkRules(association_rules3,data3,min_support,min_confidence)
-                    insertSQLRules(association_rules3, 3, min_support_new,min_confidence_new,tahun)
-                    print("if more :", len(association_rules3))  
-                else:
-                    insertSQLRules(association_rules3, 3, min_support,min_confidence,tahun)
-                    print("less :", len(association_rules3))
-
-                if len(association_rules4)>5:
-                    association_rules4,min_support_new,min_confidence_new = checkRules(association_rules4,data4,min_support,min_confidence)
-                    insertSQLRules(association_rules4, 4, min_support_new,min_confidence_new,tahun)  
-                else:
-                    insertSQLRules(association_rules1, 4, min_support,min_confidence,tahun)
-'''
 if __name__ == "__main__":
     app.run(debug=True)

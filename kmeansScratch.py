@@ -85,20 +85,19 @@ def compPCA(data,data_cluster):
     xPCA = pd.DataFrame(xPCA)
     xPCA.columns=["pc1","pc2","pc3"]
     xPCA["y"]=data_cluster
-    return xPCA
+    tesPCA = xPCA.copy()
+    print(tesPCA)
+    print(xPCA)
+    
+    for i in tesPCA["y"].unique():
+        print("i",i)
+        pc1 = "pc1" + str(i)
+        pc2 = "pc2" + str(i)
+        pc3 = "pc3" + str(i)
+        tesPCA[pc1]= tesPCA.loc[tesPCA["y"] == i, ['pc1']].copy()
+        tesPCA[pc2]= tesPCA.loc[tesPCA["y"] == i, ['pc2']].copy()
+        tesPCA[pc3]= tesPCA.loc[tesPCA["y"] == i, ['pc3']].copy()
+    print(tesPCA.loc[tesPCA["y"] == 4])
+    return xPCA, tesPCA
 
-'''
-def read_file(filename):
-    path = "/Users/agussuyono/documents/project-skripsi/file/"+filename
-    df = pd.read_excel(path)
-    array = df.values
-    X = array[:,2:9]
-    min_max_scaler = preprocessing.MinMaxScaler(feature_range=(0,1)) #inisialisasi normalisasi MinMax
-    data = min_max_scaler.fit_transform(X) #transformasi MinMax untuk fitur
-    dataset = pd.DataFrame({'NIK':array[:,1],'PK':data[:,0],'COMPETENCY':data[:,1],'LEARNING POINT':data[:,2],'Kerja Ibadah':data[:,3],'Apresiasi':data[:,4],'Lebih cepat':data[:,5],'Aktif bersama':data[:,6],})
-    filename_split=filename.rsplit('.', 1)[0]
-    path = r'/Users/agussuyono/documents/project-skripsi/csv/normalize'+filename_split+".csv"
-    dataset.to_csv(path, index = None, header=True)
-    return df
-'''
 

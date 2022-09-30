@@ -7,7 +7,7 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-8">
-                    <h1 class="m-0">Asosiasi (min support = 0.55, min confidence = 0.9)</h1>
+                    <h1 class="m-0">Asosiasi </h1>
                 </div>
             </div>
             <!-- /.row -->
@@ -105,7 +105,7 @@
                                     <div class="card-header">
                                         <h3 class="card-title">Variabel yang berpengaruh adalah </h3>
                                         {%for i in listItem4%}
-                                        <h3 class="card-title">	&nbsp; dan {{i[1]}}</h3>
+                                        <h3 class="card-title">	&nbsp;  {{i[1]}}</h3>
                                         {%endfor%}
                                     </div>
                                    
@@ -214,7 +214,7 @@
                                         {% if listItem4_23 is defined and listItem4_23|length %}
                                         {%for i in listItem4%}
                                         
-                                        <h3 class="card-title">	&nbsp; dan {{i[1]}}</h3>
+                                        <h3 class="card-title">	&nbsp; {{i[1]}}</h3>
                                         {%endfor%}
                                         {%endif%}
                                     </div>
@@ -244,25 +244,25 @@
                 </div>
                     {%if loop.index == 1%}
                         <a href="#variabel1" class="small-box-footer" data-toggle="modal" data-target="#variabel1">
-                            Check the rules<i class="fas fa-arrow-circle-right"></i>
+                            Variabel di cluster 1<i class="fas fa-arrow-circle-right"></i>
                         </a>
                     {%endif%}
 
                     {%if loop.index == 2%}
                         <a href="#variabel2" class="small-box-footer" data-toggle="modal" data-target="#variabel2">
-                        Check the rules<i class="fas fa-arrow-circle-right"></i>
+                            Variabel di cluster 2<i class="fas fa-arrow-circle-right"></i>
                         </a>
                     {%endif%}
 
                     {%if loop.index == 3%}
                         <a href="#variabel3" class="small-box-footer" data-toggle="modal" data-target="#variabel3">
-                        Check the rules<i class="fas fa-arrow-circle-right"></i>
+                            Variabel di cluster 3<i class="fas fa-arrow-circle-right"></i>
                         </a>
                     {%endif%}
 
                     {%if loop.index == 4%}
                         <a href="#variabel4" class="small-box-footer" data-toggle="modal" data-target="#variabel4">
-                        Check the rules<i class="fas fa-arrow-circle-right"></i>
+                            Variabel di cluster 4<i class="fas fa-arrow-circle-right"></i>
                         </a>
                     {%endif%}
                 </div>

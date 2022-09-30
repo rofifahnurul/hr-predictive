@@ -28,8 +28,9 @@
             -->
             <button type="button" class="btn btn-outline-warning  pull-right" data-toggle="modal" data-target="#uploadFile">Add Data Via File</button>
             <button type="button" class="btn btn-outline-dark" data-toggle="modal" data-target="#normalisasi">Normalisasi</button>
-
+            
         </div>
+        <a href="{{ url_for('download_file')}}">Download Template Penilaian</a>
 
         <div class="card">
 
@@ -130,8 +131,7 @@
                                                 <div class="form-group">
                                                     <label>Pilih tahun data yang mau dinormalisasi</label>
                                                     <select class="custom-select" name="dataSelect">
-                                                  <option>Semua data</option>
-                                                  <option>2021</option>
+                                                  
                                                   <option>2022</option>
                                                   <option>2023</option>                  
                                                 </select>

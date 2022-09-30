@@ -51,12 +51,18 @@
                                                 <div class="form-group">
                                                     <label>Data tahun </label>
                                                     <select class="custom-select" name="dataSelect">
-                                                        
-                                                  <option>2021</option>
                                                   <option>2022</option>
                                                   <option>2023</option>
                                                                  
                                                 </select>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Minimum Support</label>
+                                                    <input type="number" class="form-control" name="minSupp" step="0.01" min="0" max="1"placeholder="format koma (ex:0.55)">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Minimum Confidence</label>
+                                                    <input type="number" class="form-control" name="minConf" step="0.01" min="0" max="10" >
                                                 </div>
                                             </div>
                                         </div>
@@ -131,7 +137,7 @@
 
         </div>
 
-        <div id='myDiv'>
+        <div id='myDip'>
             <!-- Plotly chart will be drawn inside this DIV -->
         </div>
         <div id='donutCluster'>
@@ -184,47 +190,7 @@
 <script src="{{url_for ('static', filename='plugins/datatables-buttons/js/buttons.print.min.js' ) }}"></script>
 <script src="{{url_for ('static', filename='plugins/datatables-buttons/js/buttons.colVis.min.js' ) }}"></script>
 <script>
-    d3.json("{{ url_for('viewPCA') }}", function(err, rows) {
-        function unpack(rows, key) {
-            return rows.map(function(row) {
-                return row[key];
-            });
-        }
-        data = [];
-
-        const conditions = [1, 2, 3, 4]
-
-
-        var trace1 = {
-            x: unpack(rows, 'pc1'),
-            y: unpack(rows, 'pc2'),
-            z: unpack(rows, 'pc3'),
-
-            mode: 'markers',
-            marker: {
-                size: 12,
-                color: unpack(rows, 'y'),
-                colorscale: 'viridis',
-                width: 0.5,
-                opacity: 0.8
-            },
-            type: 'scatter3d'
-        };
-
-
-        var data = [trace1];
-        var layout = {
-        
-            margin: {
-                l: 0,
-                r: 0,
-                b: 0,
-                t: 0
-            }
-        };
-        Plotly.newPlot('myDiv', data, layout);
-    });
-
+    
     window.onload = function() {
     
     {% if count2023 is defined %}
@@ -366,6 +332,93 @@
     }
 </script>
 <script>
+     d3.json("{{ url_for('viewPCA') }}", function(err, rows) {
+        function unpack(rows, key) {
+            return rows.map(function(row) {
+                return row[key];
+            });
+        }
+        data = [];
+
+        var trace1 = {
+            x: unpack(rows, 'pc11'),
+            y: unpack(rows, 'pc21'),
+            z: unpack(rows, 'pc31'),
+
+            mode: 'markers',
+            name:"cluster 1",
+            marker: {
+                size: 12,
+                
+                width: 0.5,
+                opacity: 0.8
+            },
+            type: 'scatter3d'
+        };
+        var trace2 = {
+            x: unpack(rows, 'pc12'),
+            y: unpack(rows, 'pc22'),
+            z: unpack(rows, 'pc32'),
+
+            mode: 'markers',
+            name:"cluster 2",
+            marker: {
+                size: 12,
+               
+                width: 0.5,
+                opacity: 0.8
+            },
+            type: 'scatter3d'
+        };
+        var trace3 = {
+            x: unpack(rows, 'pc13'),
+            y: unpack(rows, 'pc23'),
+            z: unpack(rows, 'pc33'),
+
+            mode: 'markers',
+            name:"cluster 3",
+            marker: {
+                size: 12,
+              
+                width: 0.5,
+                opacity: 0.8
+            },
+            type: 'scatter3d'
+        };
+        var trace4 = {
+            x: unpack(rows, 'pc14'),
+            y: unpack(rows, 'pc24'),
+            z: unpack(rows, 'pc34'),
+
+            mode: 'markers',
+            name:"cluster 4",
+            marker: {
+                size: 12,
+                
+                width: 0.5,
+                opacity: 0.8
+            },
+            type: 'scatter3d'
+        };
+        
+
+
+        var data = [trace1,trace2,trace3,trace4];
+        var layout = {
+        
+            margin: {
+                l: 0,
+                r: 0,
+                b: 0,
+                t: 0
+            }
+        };
+        Plotly.newPlot('myDip', data, layout);
+    });
+
+</script>
+<script>
+
     var column = ['kpi','performance','competency','learning point','kerja ibadah','apresiasi','lebih cepat lebih baik', 'aktif bersama'];
     {% if meanList2023 is defined %}
     var dataset2 = {{ meanList2022| tojson }};
