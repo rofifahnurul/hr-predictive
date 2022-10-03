@@ -16,7 +16,7 @@ from aprioriScratch import *
 from kmeansScratch import *
 import plotly
 import plotly.express as px
-
+import plotly.graph_objects as go
 from sklearn.decomposition import PCA 
 
 UPLOAD_FOLDER = '/file'
@@ -850,6 +850,128 @@ def notdash():
       barmode='group')
    graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
    return render_template('notdash.html', graphJSON=graphJSON)
+
+def countFunc(data,column):
+  count=[]
+  job = []
+  for i in data[column].unique():
+    job.append(i)
+    countItem = len(data.loc[data[column] == i])
+    count.append(countItem)
+
+  df = pd.DataFrame({"column":job,"count":count})
+  return df
+
+def countAllCluster(data,column):
+  df1 = countFunc(data[0],column)
+  df2 = countFunc(data[1],column)
+  df3 = countFunc(data[2],column)
+  df4 = countFunc(data[3],column)
+  return df1,df2,df3,df4
+
+def sortCount(data):
+    df1 = data[0].sort_values(by=['count'],ascending=False)
+    df2 = data[1].sort_values(by=['count'],ascending=False)
+    df3 = data[2].sort_values(by=['count'],ascending=False)
+    df4 = data[3].sort_values(by=['count'],ascending=False)
+    return df1,df2,df3,df4
+
+def makeFig(data1,data2,data3,data4,nameList,title):
+  fig = go.Figure(data=[
+      go.Bar(name=nameList[0],x=data1['column'],y=data1['count'],marker=dict(color = "#d96f72")),
+      go.Bar(name=nameList[1],x=data2['column'],y=data2['count'],marker=dict(color = "#f2e268")),
+      go.Bar(name=nameList[2],x=data3['column'],y=data3['count'],marker=dict(color = "#ade872")),
+      go.Bar(name=nameList[3],x=data4['column'],y=data4['count'],marker=dict(color = "#92b4d6"))
+      ])
+  
+  fig.update_layout(
+      updatemenus=[
+          dict(
+              type="buttons",
+               direction="right",
+               x=0.57,
+               y=1.2,
+               buttons=list([
+                   dict(label="Both",
+                        method="update",
+                        args=[{"visible": [True, True, True, True]},
+                              {"title": title}]),
+                   dict(label=nameList[0],
+                        method="update",
+                        args=[{"visible": [True, False, False, False]},
+                              {"title": title + nameList[0]}]),
+                   dict(label=nameList[1],
+                        method="update",
+                        args=[{"visible": [False, True, False, False]},
+                              {"title": title + nameList[1]}]),
+                  dict(label=nameList[2],
+                        method="update",
+                        args=[{"visible": [False, False, True, False]},
+                              {"title": title + nameList[2]}]),
+                  dict(label=nameList[3],
+                        method="update",
+                        args=[{"visible": [False, False, False, True]},
+                              {"title": title + nameList[3]}]),
+               
+            ]),
+        )
+    ])
+
+  # Change the bar mode
+  fig.update_layout(barmode='group',title=title)
+  return fig
+
+@app.route('/visualisasi')
+def visualisasi():
+    if 'loggedin' in session: 
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT tahun, nik, cluster, kpiNorm, performanceNorm, competencyNorm, learningNorm, kerjaIbadahNorm, apresiasiNorm, lebihCepatNorm, aktifBersamaNorm FROM penilaian")
+        columnNames  = cur.description
+        dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
+        data= pd.DataFrame(dataResult)
+
+        cluster1 = pd.DataFrame(data.loc[data['cluster'] == 1])
+        cluster2 = pd.DataFrame(data.loc[data['cluster'] == 2])
+        cluster3 = pd.DataFrame(data.loc[data['cluster'] == 3])
+        cluster4 = pd.DataFrame(data.loc[data['cluster'] == 4])
+
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT nik, businessUnit, jobLevel, location, department, jobPosition FROM dataKaryawan")
+        columnNames  = cur.description
+        dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
+        masterData= pd.DataFrame(dataResult)
+
+        mergedCSV = masterData[['nik','businessUnit','location','department','jobPosition','jobLevel']].merge(cluster1, on = 'nik',how = 'right')
+        mergedCSV2 = masterData[['nik','businessUnit','location','department','jobPosition','jobLevel']].merge(cluster2, on = 'nik',how = 'right')
+        mergedCSV3 = masterData[['nik','businessUnit','location','department','jobPosition','jobLevel']].merge(cluster3, on = 'nik',how = 'right')
+        mergedCSV4 = masterData[['nik','businessUnit','location','department','jobPosition','jobLevel']].merge(cluster4, on = 'nik',how = 'right')
+
+        nameList = ["Cluster 1","Cluster 2", "Cluster 3", "Cluster 4"]
+        
+        data = [mergedCSV, mergedCSV2,mergedCSV3,mergedCSV4]
+        
+        #Job Level
+        df1,df2,df3,df4 = countAllCluster(data,'jobLevel')
+        jobFig = makeFig(df1,df2,df3,df4,nameList,"Job Level ")
+        
+        #Business Unit
+        df1,df2,df3,df4 = countAllCluster(data,'businessUnit')
+        unitFig = makeFig(df1,df2,df3,df4,nameList,"Business Unit ")
+
+        #Top 5 Department
+        df1,df2,df3,df4 = countAllCluster(data,'businessUnit') 
+        dataframe = [df1,df2,df3,df4]
+        df1Sort,df2Sort,df3Sort,df4Sort = sortCount(dataframe)
+        depFig = makeFig(df1Sort.head(5),df2Sort.head(5),df3Sort.head(5),df4Sort.head(5),nameList, "Top 5 Department ")
+
+        jobGraphJSON= json.dumps(jobFig, cls=plotly.utils.PlotlyJSONEncoder)
+        unitGraphJSON = json.dumps(unitFig, cls=plotly.utils.PlotlyJSONEncoder)
+        depGraphJSON = json.dumps(depFig, cls=plotly.utils.PlotlyJSONEncoder)
+
+        return render_template('visualisasi.html', jobGraphJSON = jobGraphJSON, unitGraphJSON = unitGraphJSON, depGraphJSON = depGraphJSON )
+    else:
+        return redirect(url_for('login'))
+
 
 
 @app.route('/insert', methods = ['POST'])
