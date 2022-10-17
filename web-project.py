@@ -1,5 +1,6 @@
 from concurrent.futures import process
 import re
+from statistics import mean
 import pymysql
 pymysql.install_as_MySQLdb()
 from flask import Flask, render_template, request, redirect, url_for,session, send_file
@@ -41,6 +42,7 @@ def download_file():
     p = "Template.xlsx"
     return send_file(p,as_attachment=True)
 
+#func to cluster using kmeans
 def kmeansScratch(K,data_numeric, Centroids,data):
     columnC = Centroids.columns
     diff = 1
@@ -104,34 +106,34 @@ def kmeansScratch(K,data_numeric, Centroids,data):
             print(diff.sum())                             
         Centroids = data_numeric.groupby(["cluster"]).mean()[[column[0],column[1],column[2],column[3],
         column[4],column[5],column[6],column[7]]]
-
+        
+        
+    
     return Centroids, data, data_numeric
 
+#function to find statistic value for each cluster
 def statistic(data,cluster, year):
-    df = pd.DataFrame(data.loc[data['cluster'] == cluster]).describe()
-    #cluster2 = pd.DataFrame(data.loc[data['cluster'] == 2]).describe()
-    #cluster3 = pd.DataFrame(data.loc[data['cluster'] == 3]).describe()
-    #cluster4 = pd.DataFrame(data.loc[data['cluster'] == 4]).describe()
+    conn = mysql.connection
+    cur = conn.cursor()
     
+    df  = pd.DataFrame(data.loc[data['cluster'] == cluster]).describe()
+
     conn = mysql.connection
     cur = conn.cursor()
 
     count = df.to_numpy()[0][2]
     mean = df.to_numpy()[1]
 
-    #for i in range(len(mean)-2):
-    #    print("mean",mean[i+1])
-    #    cluster = 1
-    cur.execute('INSERT INTO statistic(cluster, count, kpiMean, performanceMean, competencyMean, learningMean, kerjaIbadahMean, apresiasiMean, lebihCepatMean, aktifBersamaMean, tahun ) VALUES (%s, % s, %s,%s,%s,%s,%s,%s,%s,%s, %s)', (cluster, count, mean[1],mean[2],mean[3],mean[4],mean[5],mean[6],mean[7],mean[8],year))
-    
+    cur.execute('INSERT INTO statistic(cluster, count, kpiMean, performanceMean, competencyMean, learningMean, kerjaIbadahMean, apresiasiMean, lebihCepatMean, aktifBersamaMean, tahun ) VALUES (%s, % s, %s,%s,%s,%s,%s,%s,%s,%s, %s)', (cluster, count, mean[0],mean[1],mean[2],mean[3],mean[4],mean[5],mean[6],mean[7],year))
     mysql.connection.commit()
 
+#function to insert item from association rules
 def insertItem(cluster,tahun):
     conn = mysql.connection
     cur = conn.cursor()
     cur.execute("SELECT * FROM asosiasi WHERE cluster = %s" ,cluster)
     details = cur.fetchall()
-    columnNames  = cur.description
+
     data = pd.DataFrame(details,columns =['id','leftHand','rightHand','support','confidence','lift','conviction','minSupp','minConf','cluster','tahun'])
     listCol = []
     colNames = ["kpi","performance","learning","competency","learning","kerjaIbadah","apresiasi","lebihCepat","aktifBersama"]
@@ -156,13 +158,11 @@ def insertItem(cluster,tahun):
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('INSERT INTO itemAssociation(item, cluster, tahun) VALUES (%s, %s, %s)', (i, cluster, tahun))
         mysql.connection.commit()
-    
+
+#function to add rules to sql   
 def insertSQLRules(associationRules,cluster,minSupp, minConf,tahun):
-    listCol = []
-    colNames = ["kpi","performance","learning","competency","learning","kerjaIbadah","apresiasi","lebihCepat","aktifBersama"]
-    
+
     for row in associationRules:
-       
         left = row[0]
         if len(left)>1:
             y = list(left)
@@ -179,26 +179,25 @@ def insertSQLRules(associationRules,cluster,minSupp, minConf,tahun):
         confidence = row[2]
         lift = row[3]
         conviction = row[4] 
-    
-        #print("right",len(right))
-        
+
         cur = mysql.connection.cursor()
         cur.execute("INSERT INTO asosiasi (leftHand,rightHand,support,confidence,lift,conviction,minSupp,minConf,cluster,tahun) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",(left,right,support,confidence,lift,conviction,minSupp,minConf,cluster,tahun))
         mysql.connection.commit()
-    
+
+#function to check number of rules 
 def finalCheck(association_rules,data,min_support,min_confidence,tahun,cluster):
     
     if len(association_rules) == 0:
         association_rulesnew,min_support_new,min_confidence_new = checkIncreaseRules(association_rules,data,min_support,min_confidence)
         insertSQLRules(association_rulesnew, cluster, min_support_new,min_confidence_new,tahun)
-    
-    
+
     if len(association_rules)>5:
         association_rulesnew,min_support_new,min_confidence_new = checkReduceRules(association_rules,data,min_support,min_confidence)
         insertSQLRules(association_rulesnew, cluster, min_support_new,min_confidence_new,tahun)  
 
     else:
         insertSQLRules(association_rules, cluster, min_support,min_confidence,tahun)      
+
 
 @app.route('/register', methods =['GET', 'POST'])
 def register():
@@ -274,6 +273,14 @@ def main():
     # User is not loggedin redirect to login page
     return redirect(url_for('login'))
 
+
+@app.route("/info")
+def info():
+    if 'loggedin' in session:   
+        return render_template('info.html', username=session['username'])
+    else:
+        return redirect(url_for('login'))
+        
 #Create route to data penilaian to show employee name 
 @app.route("/datapenilaian", methods=['GET','POST'])
 def datapenilaian():
@@ -485,8 +492,7 @@ def clusterProcess():
                 msg = "Table is empty"
                 return render_template('datapenilaian.html')
             else:                  
-                #conn = mysql.connection
-                #cur = conn.cursor()     
+                   
                 #cur.execute("SELECT * FROM penilaian")
                 year = dataSelect
                 dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
@@ -495,22 +501,52 @@ def clusterProcess():
                     
                 K=int(k)
                 Centroids = data_numeric.sample(n=K)
-                tes = data_numeric.sample(n=K)
-                    
+                '''
+                Centroids['total'] = Centroids['kpiNorm'] + Centroids['performanceNorm'] + Centroids['competencyNorm'] + Centroids['learningNorm']+Centroids['kerjaIbadahNorm']+Centroids['apresiasiNorm']+Centroids['lebihCepatNorm'] + Centroids['aktifBersamaNorm']
+                Centroids.sort_values(['total'],ascending=False,inplace=True)   
+                Centroids.drop(['total'],axis=1)
+                '''
                 centroidFix, dataFix, data_numerics = kmeansScratch(K,data_numeric, Centroids,data)
-
+                
+                centroidFix['total'] = centroidFix['kpiNorm'] + centroidFix['performanceNorm'] + centroidFix['competencyNorm'] + centroidFix['learningNorm']+centroidFix['kerjaIbadahNorm']+centroidFix['apresiasiNorm']+centroidFix['lebihCepatNorm'] + centroidFix['aktifBersamaNorm']
+                centroidFix.sort_values(['total'],ascending=False,inplace=True)   
+                print(centroidFix)
+                print(centroidFix.index)
                 for index, row in dataFix.iterrows():
-                    cluster = row['cluster']
+                    
+                    if row['cluster'] == centroidFix.index[0]:
+                        print("From {} to cluster 1 ".format(row['cluster']))
+                        cluster = 1
+    
+                    elif row['cluster'] == centroidFix.index[1]:
+                        print("From {} to cluster 2 ".format(row['cluster']))
+                        cluster = 2
+                    elif row['cluster'] == centroidFix.index[2]:
+                        print("From {} to cluster 3 ".format(row['cluster']))
+                        cluster = 3
+                    elif row['cluster'] == centroidFix.index[3]:
+                        print("From {} to cluster 1 ".format(row['cluster']))
+                        cluster = 4
                     id = row['id']
                     #Clustering result is added to database   
                     cur = mysql.connection.cursor()        
                     cur.execute("UPDATE penilaian SET cluster = %s WHERE id = %s",(cluster,id))
                     mysql.connection.commit()
 
-                statistic(dataFix,1,year)
-                statistic(dataFix,2,year)
-                statistic(dataFix,3,year)
-                statistic(dataFix,4,year)
+                
+                conn = mysql.connection
+                cur = conn.cursor()  
+                result = cur.execute("SELECT kpiNorm, performanceNorm, competencyNorm, learningNorm, kerjaIbadahNorm, apresiasiNorm,  lebihCepatNorm, aktifBersamaNorm, cluster FROM penilaian WHERE tahun = %s",year)
+                details = cur.fetchall()
+
+                data = pd.DataFrame(details,columns =['kpiNorm', 'performanceNorm', 'competencyNorm', 'learningNorm', 'kerjaIbadahNorm', 'apresiasiNorm',  'lebihCepatNorm', 'aktifBersamaNorm','cluster'])
+
+               
+                statistic(data,1,year)
+                statistic(data,2,year)
+                statistic(data,3,year)
+                statistic(data,4,year)
+            
 
                 return redirect(url_for('clusteringResult'))
 
@@ -557,6 +593,8 @@ def linechartYear(year):
     
     #return mean1,mean2,mean3,mean4
     return meanList
+
+
 @app.route("/clusteringResult", methods=['GET','POST'])
 def clusteringResult():
     if 'loggedin' in session:   
@@ -578,9 +616,7 @@ def clusteringResult():
             if data['tahun'].nunique() > 1:
                 count2022 = donutClusterYear(2022)
                 count2023 = donutClusterYear(2023)
-   
-                meanList2022 = linechartYear(2022)
-                meanList2023 = linechartYear(2023)
+
                 return render_template('clustering-result.html', meanList2022 = meanList2022, userDetails=userDetails,count2022=count2022,meanList2023 = meanList2023, count2023 = count2023)
             else:
                 count2022 = donutClusterYear(2022)
@@ -876,12 +912,12 @@ def sortCount(data):
     df4 = data[3].sort_values(by=['count'],ascending=False)
     return df1,df2,df3,df4
 
-def makeFig(data1,data2,data3,data4,nameList,title):
+def makeFig(data1,data2,data3,data4,nameList,title,x_col,y_col):
   fig = go.Figure(data=[
-      go.Bar(name=nameList[0],x=data1['column'],y=data1['count'],marker=dict(color = "#d96f72")),
-      go.Bar(name=nameList[1],x=data2['column'],y=data2['count'],marker=dict(color = "#f2e268")),
-      go.Bar(name=nameList[2],x=data3['column'],y=data3['count'],marker=dict(color = "#ade872")),
-      go.Bar(name=nameList[3],x=data4['column'],y=data4['count'],marker=dict(color = "#92b4d6"))
+      go.Bar(name=nameList[0],x=data1[x_col],y=data1[y_col],marker=dict(color = "#d96f72")),
+      go.Bar(name=nameList[1],x=data2[x_col],y=data2[y_col],marker=dict(color = "#f2e268")),
+      go.Bar(name=nameList[2],x=data3[x_col],y=data3[y_col],marker=dict(color = "#ade872")),
+      go.Bar(name=nameList[3],x=data4[x_col],y=data4[y_col],marker=dict(color = "#92b4d6"))
       ])
   
   fig.update_layout(
@@ -947,28 +983,70 @@ def visualisasi():
         mergedCSV4 = masterData[['nik','businessUnit','location','department','jobPosition','jobLevel']].merge(cluster4, on = 'nik',how = 'right')
 
         nameList = ["Cluster 1","Cluster 2", "Cluster 3", "Cluster 4"]
+        #Count graph
+        
+        count = [len(mergedCSV),len(mergedCSV2),len(mergedCSV3),len(mergedCSV4)]
+        cluster = ["cluster 1","cluster 2","cluster 3","cluster 4"]
+
+        dataframe = pd.DataFrame({"cluster":cluster,"count":count})
+
+        df1 = dataframe.loc[dataframe['cluster'] == "cluster 1"]
+        df2 = dataframe.loc[dataframe['cluster'] == "cluster 2"]
+        df3 = dataframe.loc[dataframe['cluster'] == "cluster 3"]
+        df4 = dataframe.loc[dataframe['cluster'] == "cluster 4"]
+
+        countFig = go.Figure(data=[
+            go.Bar(name='Cluster 1',x=df1['cluster'],y=df1['count'],marker=dict(color = "#d96f72"),text=df1['count'],textposition='outside'),
+            go.Bar(name='Cluster 2',x=df2['cluster'],y=df2['count'],marker=dict(color = "#f2e268"),text=df2['count'],textposition='outside'),
+            go.Bar(name='Cluster 3',x=df3['cluster'],y=df3['count'],marker=dict(color = "#ade872"),text=df3['count'],textposition='outside'),
+            go.Bar(name='Cluster 4',x=df4['cluster'],y=df4['count'],marker=dict(color = "#92b4d6"),text=df4['count'],textposition='outside')
+        ])
+        countFig.update_layout(barmode='group',title="Jumlah Item (Count)")
+        #End Count graph
         
         data = [mergedCSV, mergedCSV2,mergedCSV3,mergedCSV4]
         
         #Job Level
         df1,df2,df3,df4 = countAllCluster(data,'jobLevel')
-        jobFig = makeFig(df1,df2,df3,df4,nameList,"Job Level ")
+        jobFig = makeFig(df1,df2,df3,df4,nameList,"Job Level ","column","count")
         
         #Business Unit
         df1,df2,df3,df4 = countAllCluster(data,'businessUnit')
-        unitFig = makeFig(df1,df2,df3,df4,nameList,"Business Unit ")
+        unitFig = makeFig(df1,df2,df3,df4,nameList,"Business Unit ","column","count")
 
         #Top 5 Department
-        df1,df2,df3,df4 = countAllCluster(data,'businessUnit') 
+        df1,df2,df3,df4 = countAllCluster(data,'department') 
         dataframe = [df1,df2,df3,df4]
         df1Sort,df2Sort,df3Sort,df4Sort = sortCount(dataframe)
-        depFig = makeFig(df1Sort.head(5),df2Sort.head(5),df3Sort.head(5),df4Sort.head(5),nameList, "Top 5 Department ")
+        depFig = makeFig(df1Sort.head(5),df2Sort.head(5),df3Sort.head(5),df4Sort.head(5),nameList, "Top 5 Department ","column","count")
 
+         
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT cluster, kpiMean, performanceMean, competencyMean, learningMean, kerjaIbadahMean, apresiasiMean, lebihCepatMean, aktifBersamaMean FROM statistic WHERE tahun = 2022")
+        columnNames  = cur.description
+        dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
+        dataMean = pd.DataFrame(dataResult)
+
+        cluster1 = pd.DataFrame(dataMean.loc[dataMean['cluster'] == 1])
+        cluster2 = pd.DataFrame(dataMean.loc[dataMean['cluster'] == 2])
+        cluster3 = pd.DataFrame(dataMean.loc[dataMean['cluster'] == 3])
+        cluster4 = pd.DataFrame(dataMean.loc[dataMean['cluster'] == 4])
+        column = ['kpiMean', 'performanceMean', 'competencyMean', 'learningMean', 'kerjaIbadahMean', 'apresiasiMean', 'lebihCepatMean', 'aktifBersamaMean']
+
+        df1 = pd.melt(cluster1, id_vars='cluster')
+        df2 = pd.melt(cluster2, id_vars='cluster')
+        df3 = pd.melt(cluster3, id_vars='cluster')
+        df4 = pd.melt(cluster4, id_vars='cluster')
+
+        meanFig = makeFig(df1,df2,df3,df4,nameList,"Rata - rata nilai ","variable","value")
+
+        countGraphJSON = json.dumps(countFig, cls=plotly.utils.PlotlyJSONEncoder)
         jobGraphJSON= json.dumps(jobFig, cls=plotly.utils.PlotlyJSONEncoder)
         unitGraphJSON = json.dumps(unitFig, cls=plotly.utils.PlotlyJSONEncoder)
         depGraphJSON = json.dumps(depFig, cls=plotly.utils.PlotlyJSONEncoder)
+        meanGraphJSON = json.dumps(meanFig, cls=plotly.utils.PlotlyJSONEncoder)
 
-        return render_template('visualisasi.html', jobGraphJSON = jobGraphJSON, unitGraphJSON = unitGraphJSON, depGraphJSON = depGraphJSON )
+        return render_template('visualisasi.html', countGraphJSON = countGraphJSON, jobGraphJSON = jobGraphJSON, unitGraphJSON = unitGraphJSON, depGraphJSON = depGraphJSON, meanGraphJSON = meanGraphJSON)
     else:
         return redirect(url_for('login'))
 

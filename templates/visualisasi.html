@@ -6,7 +6,7 @@
             <div class="container-fluid">
                 <div class="row mb-2">
                     <div class="col-sm-6">
-                        <h1 class="m-0">Clustering Result {{date}}</h1>
+                        <h1 class="m-0">Visualisasi</h1>
                     </div>
                    
                 </div>
@@ -20,6 +20,17 @@
         <!-- /.content-header -->
         <!-- Main content -->
         <section class="content">
+
+            <div class="card">
+                <div id='count'>
+                    <!-- Plotly chart will be drawn inside this DIV -->
+                </div>
+            </div>
+            <div class="card">
+                <div id='mean'>
+                    <!-- Plotly chart will be drawn inside this DIV -->
+                </div>
+            </div>
             <div class="card">
                 <div id='jobLevel'>
                     <!-- Plotly chart will be drawn inside this DIV -->
@@ -35,21 +46,29 @@
                     <!-- Plotly chart will be drawn inside this DIV -->
                 </div>
             </div>
-       
+            
         </section>
         <!-- /.content -->
     </div>
 </body>
 <script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
 <script type='text/javascript'>
-  var jobGraphs = {{jobGraphJSON| safe}};
-  Plotly.plot('jobLevel', jobGraphs,{});
+   
+    var countGraphs = {{countGraphJSON| safe}};
+    Plotly.plot('count', countGraphs,{});
 
-  var unitGraphs = {{unitGraphJSON| safe}};
-  Plotly.plot('businessUnit', unitGraphs,{});
+    var jobGraphs = {{jobGraphJSON| safe}};
+    Plotly.plot('jobLevel', jobGraphs,{});
 
-  var depGraphs = {{depGraphJSON| safe}};
-  Plotly.plot('top5dep', depGraphs,{});
+    var unitGraphs = {{unitGraphJSON| safe}};
+    Plotly.plot('businessUnit', unitGraphs,{});
+
+    var depGraphs = {{depGraphJSON| safe}};
+    Plotly.plot('top5dep', depGraphs,{});
+
+    var meanGraphs = {{meanGraphJSON| safe}};
+    Plotly.plot('mean', meanGraphs,{});
+
 </script>
 
 <!-- /.content-wrapper -->

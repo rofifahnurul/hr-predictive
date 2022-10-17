@@ -91,33 +91,44 @@
                     <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                                       
                                 <li class="nav-item">
-                                    <a href="/datapenilaian" class="nav-link">
+                                    <a href="/datapenilaian" class="nav-link {{ 'active' if active_page == 'datapenilaian' else '' }}">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Data Penilaian</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="/dataKaryawan" class="nav-link {{ 'active' if active_page == 'dataKaryawan' else '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Data Karyawan</p>
                                     </a>
                                 </li>
                         
                           
                                 <li class="nav-item">
-                                    <a href="/normalisasiResult" class="nav-link ">
+                                    <a href="/normalisasiResult" class="nav-link {{ 'active' if active_page == 'normalisasiResult' else '' }} ">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Data Normalisasi</p>
                                     </a>
                                 </li>
                     
                                 <li class="nav-item">
-                                    <a href="/clusteringResult" class="nav-link ">
+                                    <a href="/clusteringResult" class="nav-link {{ 'active' if active_page == 'clusteringResult' else '' }}">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Clustering Result</p>
                                     </a>
                                 </li>
-                      
-                       
-              
+
                                 <li class="nav-item">
-                                    <a href="/associationResult" class="nav-link ">
+                                    <a href="/associationResult" class="nav-link {{ 'active' if active_page == 'associationResult' else '' }}">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Asosiasi Result</p>
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a href="/visualisasi" class="nav-link ">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Visualisasi</p>
                                     </a>
                                 </li>
                           
