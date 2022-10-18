@@ -123,8 +123,8 @@ def statistic(data,cluster, year):
 
     count = df.to_numpy()[0][2]
     mean = df.to_numpy()[1]
-
-    cur.execute('INSERT INTO statistic(cluster, count, kpiMean, performanceMean, competencyMean, learningMean, kerjaIbadahMean, apresiasiMean, lebihCepatMean, aktifBersamaMean, tahun ) VALUES (%s, % s, %s,%s,%s,%s,%s,%s,%s,%s, %s)', (cluster, count, mean[0],mean[1],mean[2],mean[3],mean[4],mean[5],mean[6],mean[7],year))
+    total = mean[0] + mean[1] + mean[2] + mean[3] + mean[4]+ mean[5]+mean[6]+mean[7]
+    cur.execute('INSERT INTO statistic(cluster, count, kpiMean, performanceMean, competencyMean, learningMean, kerjaIbadahMean, apresiasiMean, lebihCepatMean, aktifBersamaMean, tahun, total) VALUES (%s, % s, %s,%s,%s,%s,%s,%s,%s,%s, %s,%s)', (cluster, count, mean[0],mean[1],mean[2],mean[3],mean[4],mean[5],mean[6],mean[7],year,total))
     mysql.connection.commit()
 
 #function to insert item from association rules
@@ -540,8 +540,7 @@ def clusterProcess():
                 details = cur.fetchall()
 
                 data = pd.DataFrame(details,columns =['kpiNorm', 'performanceNorm', 'competencyNorm', 'learningNorm', 'kerjaIbadahNorm', 'apresiasiNorm',  'lebihCepatNorm', 'aktifBersamaNorm','cluster'])
-
-               
+                
                 statistic(data,1,year)
                 statistic(data,2,year)
                 statistic(data,3,year)
@@ -890,19 +889,31 @@ def notdash():
 def countFunc(data,column):
   count=[]
   job = []
-  for i in data[column].unique():
-    job.append(i)
-    countItem = len(data.loc[data[column] == i])
-    count.append(countItem)
+    
+  if len(data[column].unique()) > 1:
+    for i in data[column].unique():
+        job.append(i)
+        countItem = len(data.loc[data[column] == i])
+        count.append(countItem)
+    del job[-1]
+    del count[-1]
+  else:
+    for i in data[column].unique():
+        job.append(i)
+        countItem = len(data.loc[data[column] == i])
+        count.append(countItem)
 
   df = pd.DataFrame({"column":job,"count":count})
+  
   return df
+
 
 def countAllCluster(data,column):
   df1 = countFunc(data[0],column)
   df2 = countFunc(data[1],column)
   df3 = countFunc(data[2],column)
   df4 = countFunc(data[3],column)
+  
   return df1,df2,df3,df4
 
 def sortCount(data):
@@ -982,18 +993,20 @@ def visualisasi():
         mergedCSV3 = masterData[['nik','businessUnit','location','department','jobPosition','jobLevel']].merge(cluster3, on = 'nik',how = 'right')
         mergedCSV4 = masterData[['nik','businessUnit','location','department','jobPosition','jobLevel']].merge(cluster4, on = 'nik',how = 'right')
 
+       
         nameList = ["Cluster 1","Cluster 2", "Cluster 3", "Cluster 4"]
         #Count graph
         
         count = [len(mergedCSV),len(mergedCSV2),len(mergedCSV3),len(mergedCSV4)]
         cluster = ["cluster 1","cluster 2","cluster 3","cluster 4"]
 
-        dataframe = pd.DataFrame({"cluster":cluster,"count":count})
+        dfCount = pd.DataFrame({"cluster":cluster,"count":count})
+        countSort = dfCount.sort_values(by=["count"],ascending=False)
 
-        df1 = dataframe.loc[dataframe['cluster'] == "cluster 1"]
-        df2 = dataframe.loc[dataframe['cluster'] == "cluster 2"]
-        df3 = dataframe.loc[dataframe['cluster'] == "cluster 3"]
-        df4 = dataframe.loc[dataframe['cluster'] == "cluster 4"]
+        df1 = dfCount.loc[dfCount['cluster'] == "cluster 1"]
+        df2 = dfCount.loc[dfCount['cluster'] == "cluster 2"]
+        df3 = dfCount.loc[dfCount['cluster'] == "cluster 3"]
+        df4 = dfCount.loc[dfCount['cluster'] == "cluster 4"]
 
         countFig = go.Figure(data=[
             go.Bar(name='Cluster 1',x=df1['cluster'],y=df1['count'],marker=dict(color = "#d96f72"),text=df1['count'],textposition='outside'),
@@ -1001,37 +1014,48 @@ def visualisasi():
             go.Bar(name='Cluster 3',x=df3['cluster'],y=df3['count'],marker=dict(color = "#ade872"),text=df3['count'],textposition='outside'),
             go.Bar(name='Cluster 4',x=df4['cluster'],y=df4['count'],marker=dict(color = "#92b4d6"),text=df4['count'],textposition='outside')
         ])
-        countFig.update_layout(barmode='group',title="Jumlah Item (Count)")
+        countFig.update_layout(barmode='group',title="Jumlah Karyawan di Tiap Cluster ")
         #End Count graph
         
         data = [mergedCSV, mergedCSV2,mergedCSV3,mergedCSV4]
         
         #Job Level
-        df1,df2,df3,df4 = countAllCluster(data,'jobLevel')
-        jobFig = makeFig(df1,df2,df3,df4,nameList,"Job Level ","column","count")
+        df1_job,df2_job,df3_job,df4_job = countAllCluster(data,'jobLevel')
+        jobFig = makeFig(df1_job,df2_job,df3_job,df4_job,nameList,"Job Level ","column","count")
         
         #Business Unit
-        df1,df2,df3,df4 = countAllCluster(data,'businessUnit')
-        unitFig = makeFig(df1,df2,df3,df4,nameList,"Business Unit ","column","count")
-
+        df1_unit,df2_unit,df3_unit,df4_unit = countAllCluster(data,'businessUnit')
+        unitFig = makeFig(df1_unit,df2_unit,df3_unit,df4_unit,nameList,"businessUnit ","column","count")
+        
+      
         #Top 5 Department
-        df1,df2,df3,df4 = countAllCluster(data,'department') 
-        dataframe = [df1,df2,df3,df4]
+        df1_dep,df2_dep,df3_dep,df4_dep = countAllCluster(data,'department') 
+        dataframe = [df1_dep,df2_dep,df3_dep,df4_dep]
         df1Sort,df2Sort,df3Sort,df4Sort = sortCount(dataframe)
         depFig = makeFig(df1Sort.head(5),df2Sort.head(5),df3Sort.head(5),df4Sort.head(5),nameList, "Top 5 Department ","column","count")
 
          
         cur = mysql.connection.cursor()
-        cur.execute("SELECT cluster, kpiMean, performanceMean, competencyMean, learningMean, kerjaIbadahMean, apresiasiMean, lebihCepatMean, aktifBersamaMean FROM statistic WHERE tahun = 2022")
+        cur.execute("SELECT cluster, kpiMean, performanceMean, competencyMean, learningMean, kerjaIbadahMean, apresiasiMean, lebihCepatMean, aktifBersamaMean, total FROM statistic WHERE tahun = 2022")
+    
         columnNames  = cur.description
         dataResult = [{columnNames[index][0]: column for index, column in enumerate(value)} for value in cur.fetchall()]
         dataMean = pd.DataFrame(dataResult)
+        dataMean = dataMean.drop('total',axis = 1)
+
+
+        dfDuplicate = dataMean.copy()
+        dfDuplicate['max']=dfDuplicate[['kpiMean', 'performanceMean', 'competencyMean', 'learningMean', 'kerjaIbadahMean', 'apresiasiMean', 'lebihCepatMean', 'aktifBersamaMean']].max(axis = 1)
+        dfDuplicate['max_col']=dfDuplicate[['kpiMean', 'performanceMean', 'competencyMean', 'learningMean', 'kerjaIbadahMean', 'apresiasiMean', 'lebihCepatMean', 'aktifBersamaMean']].idxmax(axis=1)
+        dfDuplicate['max_col'] = dfDuplicate['max_col'].str.replace("Mean","")
+        dfDuplicate['min']=dfDuplicate[['kpiMean', 'performanceMean', 'competencyMean', 'learningMean', 'kerjaIbadahMean', 'apresiasiMean', 'lebihCepatMean', 'aktifBersamaMean']].min(axis = 1)
+        dfDuplicate['min_col']=dfDuplicate[['kpiMean', 'performanceMean', 'competencyMean', 'learningMean', 'kerjaIbadahMean', 'apresiasiMean', 'lebihCepatMean', 'aktifBersamaMean']].idxmin(axis=1)
+        dfDuplicate['min_col'] = dfDuplicate['min_col'].str.replace("Mean","")
 
         cluster1 = pd.DataFrame(dataMean.loc[dataMean['cluster'] == 1])
         cluster2 = pd.DataFrame(dataMean.loc[dataMean['cluster'] == 2])
         cluster3 = pd.DataFrame(dataMean.loc[dataMean['cluster'] == 3])
         cluster4 = pd.DataFrame(dataMean.loc[dataMean['cluster'] == 4])
-        column = ['kpiMean', 'performanceMean', 'competencyMean', 'learningMean', 'kerjaIbadahMean', 'apresiasiMean', 'lebihCepatMean', 'aktifBersamaMean']
 
         df1 = pd.melt(cluster1, id_vars='cluster')
         df2 = pd.melt(cluster2, id_vars='cluster')
@@ -1045,8 +1069,12 @@ def visualisasi():
         unitGraphJSON = json.dumps(unitFig, cls=plotly.utils.PlotlyJSONEncoder)
         depGraphJSON = json.dumps(depFig, cls=plotly.utils.PlotlyJSONEncoder)
         meanGraphJSON = json.dumps(meanFig, cls=plotly.utils.PlotlyJSONEncoder)
-
-        return render_template('visualisasi.html', countGraphJSON = countGraphJSON, jobGraphJSON = jobGraphJSON, unitGraphJSON = unitGraphJSON, depGraphJSON = depGraphJSON, meanGraphJSON = meanGraphJSON)
+        
+        return render_template('visualisasi.html', df1_unit = df1_unit, df2_unit=df2_unit, df3_unit=df3_unit,df4_unit=df4_unit,
+        df1_dep = df1_dep, df2_dep=df2_dep, df3_dep=df3_dep,  df4_dep=df4_dep, 
+        df1_job= df1_job, df2_job = df2_job, df3_job = df3_job, df4_job = df4_job,
+        dfDuplicate = dfDuplicate, countGraphJSON = countGraphJSON, jobGraphJSON = jobGraphJSON, unitGraphJSON = unitGraphJSON, depGraphJSON = depGraphJSON, meanGraphJSON = meanGraphJSON,
+        count=count, countSort=countSort,dataMean = dataMean)
     else:
         return redirect(url_for('login'))
 
