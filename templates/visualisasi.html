@@ -30,25 +30,39 @@
                     </div>
                     <div class="modal-body">                 
                             <div class='card-body'>
-                                
+                                {%for i, row in dfDuplicate.iterrows() %}
+                                        {% if loop.first== True %}
                                 <div class="card text-white bg-info mb-3" >                
                                     <div class="card-body">
                                         <p  class="card-text px-4 py-2">
-                                        {%for i, row in dfDuplicate.iterrows() %}
-                                        {% if loop.first== True %}
+                                        Cluster yang memiliki nilai rata - rata terbaik yaitu cluster {{row['cluster']}} dengan nilai rata-rata seperti yang terlihat pada grafik. 
+                                    
+                                        </p>
+                                    </div>
+                                </div>
 
-                                        Cluster yang memiliki nilai rata - rata terbaik yaitu cluster {{row['cluster']}} dengan nilai rata-rata seperti yang terlihat pada grafik. Pada cluster terbaik ini, nilai rata-rata yang paling tinggi yaitu nilai  {{row['max_col']}} dengan nilai {{row['max']}}. Adapun nilai rata-rata yang paling rendah di cluster terbaik ini adalah nilai {{row['min_col']}} dengan nilai {{row['min']}}. Sehingga, perlu ditingkatkan lagi untuk nilai {{row['min_col']}}. Karyawan yang berada di cluster terbaik ini berasal dari 
-                                        
+                                <div class="card text-white bg-info mb-3" >                
+                                    <div class="card-body">
+                                        <p  class="card-text px-4 py-2">
+                                        Pada cluster terbaik ini, nilai rata-rata yang paling tinggi yaitu nilai  {{row['max_col']}} dengan nilai {{row['max']}}. Nilai rata-rata yang paling rendah di cluster terbaik ini adalah nilai {{row['min_col']}} dengan nilai {{row['min']}}. 
+                                      
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="card text-white bg-info mb-3" >                
+                                    <div class="card-body">
+                                        <p  class="card-text px-4 py-2">
+                                        Karyawan yang berada di cluster terbaik ini berasal dari 
                                         {%for i,row in df1_unit.iterrows()%}
                                             {{row['column']}}, 
                                         {%endfor%}
                                         </p>
-                                        {% endif %}
-                                        
-                                        {%endfor%}
-
                                     </div>
                                 </div>
+
+                                {% endif %}
+                                {% endfor %}
                             </div>
                     </div>
                 </div>
@@ -71,8 +85,6 @@
                                 <div class="card text-white bg-info mb-3" >                
                                     <div class="card-body">
                                         <p  class="card-text px-4 py-2">
-                                           
-                                            
                                             Jumlah karyawan yang masuk di tiap cluster jumlahnya berbeda - beda. Cluster dengan jumlah karyawan terbanyak, dimiliki oleh {{ row['cluster']}} 
                                             dengan jumlah karyawan {{ row['count']}}
                                             
@@ -128,18 +140,33 @@
                     </div>
                     <div class="modal-body">                 
                             <div class='card-body'>
+                                {%for i, row in dfDuplicate.iterrows() %}
+                                      {% if loop.last == True %}
                                 <div class="card text-white bg-info mb-3" >                
                                     <div class="card-body">
                                         <p  class="card-text px-4 py-2">
-                                        {%for i, row in dfDuplicate.iterrows() %}
                                         
-                                        {% if loop.last == True %}
-                                        Cluster yang memiliki nilai rata - rata paling rendah yaitu cluster {{row['cluster']}} dengan nilai rata-rata seperti yang terlihat pada grafik. Pada cluster yang paling rendah ini, nilai yang paling tinggi yaitu nilai  {{row['max_col']}} dengan nilai {{row['max']}} </p>
-                                        {% endif %}
-                                        {%endfor%}
-
+                                        Cluster yang memiliki nilai rata - rata paling rendah yaitu cluster {{row['cluster']}} dengan nilai rata-rata seperti yang terlihat pada grafik.  </p>
                                     </div>
                                 </div>
+                                <div class="card text-white bg-info mb-3" >                
+                                    <div class="card-body">
+                                        <p  class="card-text px-4 py-2">
+                                        Pada cluster yang paling rendah ini, nilai yang paling tinggi yaitu nilai  {{row['max_col']}} dengan nilai {{row['max']}}. Nilai rata-rata yang paling rendah di cluster terbaik ini adalah nilai {{row['min_col']}} dengan nilai {{row['min']}}.  </p>
+                                    </div>
+                                </div>
+                                <div class="card text-white bg-info mb-3" >                
+                                    <div class="card-body">
+                                        <p  class="card-text px-4 py-2">
+                                        Karyawan yang berada di cluster terbaik ini berasal dari 
+                                        {%for i,row in df4_unit.iterrows()%}
+                                            {{row['column']}}, 
+                                        {%endfor%}
+                                        </p>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {%endfor%}
                             </div>
                     </div>
                 </div>
@@ -165,7 +192,7 @@
                                 <div class="card text-white bg-info mb-3" >                
                                     <div class="card-body">
                                         <p  class="card-text px-4 py-2">
-                                            Terdapat {{ i }} karyawan yang masuk ke cluster1. Pada cluster ini, rata - rata nilai yang paling tinggi yaitu nilai  {{row['max_col']}} dengan nilai {{row['max']}}. Serta rata-rata nilai yang paling rendah yaitu nilai {{row['min_col']}} dengan nilai {{row['min']}}. 
+                                            Terdapat {{ i }} karyawan yang masuk ke cluster 1. Pada cluster ini, rata - rata nilai yang paling tinggi yaitu nilai  {{row['max_col']}} dengan nilai {{row['max']}}. Serta rata-rata nilai yang paling rendah yaitu nilai {{row['min_col']}} dengan nilai {{row['min']}}. 
                                             Karena itu, untuk nilai {{row['min_col']}} perlu diperhatikan dan ditingkatkan lagi
                                         </p>
                                     </div>
@@ -428,10 +455,10 @@
             <button type="button" class="btn btn-outline-info mb-3 pull-right" data-toggle="modal" data-target="#jml">Analisis Jumlah Data</button>
         </div>
             <div class="btn-group">
-                <button type="button" class="btn btn-outline-info mb-3 pull-right" data-toggle="modal" data-target="#terbaik">Analisis Cluster Ter-baik</button>
+                <button type="button" class="btn btn-outline-info mb-3 pull-right" data-toggle="modal" data-target="#terbaik">Analisis Cluster Terbaik</button>
             </div>
             <div class="btn-group">
-                <button type="button" class="btn btn-outline-info mb-3 pull-right" data-toggle="modal" data-target="#terrendah">Analisis Cluster Ter-rendah</button>
+                <button type="button" class="btn btn-outline-info mb-3 pull-right" data-toggle="modal" data-target="#terrendah">Analisis Cluster Terrendah</button>
             </div>
             <div class="btn-group">
                 <button type="button" class="btn btn-outline-info mb-3 pull-right" data-toggle="modal" data-target="#cluster1">Analisis Cluster 1</button>

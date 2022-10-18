@@ -237,33 +237,34 @@
                 <!-- small card -->
                 <div class="small-box bg-maroon">
                 <div class="inner">
-                    <h3>{{i}}<sup style="font-size: 20px"></sup></h3>
-                    <p>Rules</p>
+                    <p>Cluster</p>
+                    <h3>{{loop.index}}<sup style="font-size: 20px"></sup></h3>
+                    
                 </div>
                 <div class="icon">
                     <i class="ion ion-stats-bars"></i>
                 </div>
                     {%if loop.index == 1%}
                         <a href="#variabel1" class="small-box-footer" data-toggle="modal" data-target="#variabel1">
-                            Variabel di cluster 1<i class="fas fa-arrow-circle-right"></i>
+                            Variabel yang terkait<i class="fas fa-arrow-circle-right"></i>
                         </a>
                     {%endif%}
 
                     {%if loop.index == 2%}
                         <a href="#variabel2" class="small-box-footer" data-toggle="modal" data-target="#variabel2">
-                            Variabel di cluster 2<i class="fas fa-arrow-circle-right"></i>
+                            Variabel yang terkait<i class="fas fa-arrow-circle-right"></i>
                         </a>
                     {%endif%}
 
                     {%if loop.index == 3%}
                         <a href="#variabel3" class="small-box-footer" data-toggle="modal" data-target="#variabel3">
-                            Variabel di cluster 3<i class="fas fa-arrow-circle-right"></i>
+                            Variabel yang terkait<i class="fas fa-arrow-circle-right"></i>
                         </a>
                     {%endif%}
 
                     {%if loop.index == 4%}
                         <a href="#variabel4" class="small-box-footer" data-toggle="modal" data-target="#variabel4">
-                            Variabel di cluster 4<i class="fas fa-arrow-circle-right"></i>
+                            Variabel yang terkait<i class="fas fa-arrow-circle-right"></i>
                         </a>
                     {%endif%}
                 </div>
