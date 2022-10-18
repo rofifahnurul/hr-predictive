@@ -66,25 +66,51 @@
                     </div>
                     <div class="modal-body">                 
                             <div class='card-body'>
-                                
+                                {%for i, row in countSort.iterrows() %}
+                                {% if loop.first == True %}
                                 <div class="card text-white bg-info mb-3" >                
                                     <div class="card-body">
                                         <p  class="card-text px-4 py-2">
-                                        {%for i, row in dfDuplicate.iterrows() %}
-                                        {% if loop.first== True %}
-
-                                        Cluster yang memiliki nilai rata - rata terbaik yaitu cluster {{row['cluster']}} dengan nilai rata-rata seperti yang terlihat pada grafik. Pada cluster terbaik ini, nilai rata-rata yang paling tinggi yaitu nilai  {{row['max_col']}} dengan nilai {{row['max']}}. Adapun nilai rata-rata yang paling rendah di cluster terbaik ini adalah nilai {{row['min_col']}} dengan nilai {{row['min']}}. Sehingga, perlu ditingkatkan lagi untuk nilai {{row['min_col']}}. Karyawan yang berada di cluster terbaik ini berasal dari 
-                                        
-                                        {%for i,row in df1_unit.iterrows()%}
-                                            {{row['column']}}, 
-                                        {%endfor%}
-                                        </p>
-                                        {% endif %}
-                                        
-                                        {%endfor%}
-
+                                           
+                                            
+                                            Jumlah karyawan yang masuk di tiap cluster jumlahnya berbeda - beda. Cluster dengan jumlah karyawan terbanyak, dimiliki oleh {{ row['cluster']}} 
+                                            dengan jumlah karyawan {{ row['count']}}
+                                            
+                                        </p> 
                                     </div>
                                 </div>
+                                {% endif %}
+                                {% if loop.index == 2 %}
+                                <div class="card text-white bg-info mb-3" >                
+                                    <div class="card-body">
+                                        <p  class="card-text px-4 py-2">
+                                            Cluster dengan jumlah karyawan terbanyak kedua yaitu {{ row['cluster'] }} dengan jumlah karyawan {{ row['count']}}
+                                     
+                                        </p> 
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if loop.index == 3 %}
+                                <div class="card text-white bg-info mb-3" >                
+                                    <div class="card-body">
+                                        <p  class="card-text px-4 py-2">
+                                            Cluster dengan jumlah karyawan terbanyak ketiga yaitu {{ row['cluster'] }} dengan jumlah karyawan {{ row['count']}}
+                                      </p> 
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if loop.last == True %}
+                                <div class="card text-white bg-info mb-3" >                
+                                    <div class="card-body">
+                                        <p  class="card-text px-4 py-2">
+                                            Cluster dengan jumlah karyawan palng sedikit yaitu {{ row['cluster'] }} dengan jumlah karyawan {{ row['count']}}
+                                        
+                                        </p> 
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {%endfor%}
+                  
                             </div>
                     </div>
                 </div>
